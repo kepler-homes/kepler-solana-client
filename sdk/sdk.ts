@@ -1,11 +1,12 @@
 import * as anchor from "@coral-xyz/anchor";
-import { Program, BN, EventParser, BorshCoder, AnchorProvider } from "@coral-xyz/anchor";
+import { Program, BN, EventParser, BorshCoder, AnchorProvider, Provider } from "@coral-xyz/anchor";
 import { Kepler, IDL } from "../target/types/kepler";
 import { Keypair, PublicKey, Connection, SYSVAR_RENT_PUBKEY, SystemProgram } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import * as spl from "@solana/spl-token";
 import { Metadata, PROGRAM_ID as METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import { Metaplex } from "@metaplex-foundation/js";
+import { hexToBytes, padLeft } from "web3-utils";
 
 export class KeplerClient {
     public connection: Connection;
@@ -14,14 +15,29 @@ export class KeplerClient {
     public eventParser: EventParser;
     public endpoint: string;
 
-    public static programId: string = "2ejK6UzYJuG6w5isdpbEW7k3FCiaWH17mqGawfwC4oPD";
+    public gkeplTokenMatadata = {
+        name: "Kepler gToken",
+        symbol: "gKEPL",
+        uri: "https://solana-api.kepler.homes/api/metadata/gkepl.json",
+    };
+
+    public keplTokenMatadata = {
+        name: "Kepler Token",
+        symbol: "KEPL",
+        uri: "https://solana-api.kepler.homes/api/metadata/kepl.json",
+    };
+
+    public petCollectionMatadata = {
+        name: "Kepler Bot Collection",
+        symbol: "KEPLBC",
+        uri: "https://solana-api.kepler.homes/api/metadata/pet-collection.json",
+    };
+
+    public static programId: string = "Ac65CKN49nxHiB9HaKw7HwYT3wLynSRVy51AN9yNAafN";
 
     public static fromEndpoint(endpoint: string) {
-        const program = new Program(
-            IDL,
-            new PublicKey(KeplerClient.programId),
-            new AnchorProvider(new Connection(endpoint), null, AnchorProvider.defaultOptions())
-        );
+        const provider = new AnchorProvider(new Connection(endpoint), null, AnchorProvider.defaultOptions());
+        const program = new Program(IDL, new PublicKey(KeplerClient.programId), provider);
         return new KeplerClient(program);
     }
 
@@ -33,12 +49,37 @@ export class KeplerClient {
         this.endpoint = this.connection["_rpcEndpoint"];
     }
 
-    findTokenPDA() {
-        return PublicKey.findProgramAddressSync([Buffer.from("Token")], this.program.programId)[0];
+    findGkeplTokenPDA() {
+        return this.findTokenPDA(this.gkeplTokenMatadata.name);
+        // return PublicKey.findProgramAddressSync([Buffer.from("gkepl")], this.program.programId)[0];
+    }
+
+    findTokenPDA(name: string) {
+        return PublicKey.findProgramAddressSync([Buffer.from(name)], this.program.programId)[0];
+    }
+
+    findKeplTokenPDA() {
+        return this.findTokenPDA(this.keplTokenMatadata.name);
+    }
+
+    findPetCollectionPDA() {
+        return this.findTokenPDA(this.petCollectionMatadata.name);
     }
 
     findLendingAccountPDA() {
         return PublicKey.findProgramAddressSync([Buffer.from("Lending")], this.program.programId)[0];
+    }
+
+    findGlobalAccountPDA() {
+        return PublicKey.findProgramAddressSync([Buffer.from("Global")], this.program.programId)[0];
+    }
+
+    findPetAccountPDA() {
+        return PublicKey.findProgramAddressSync([Buffer.from("Pet")], this.program.programId)[0];
+    }
+
+    findLandAccountPDA() {
+        return PublicKey.findProgramAddressSync([Buffer.from("Land")], this.program.programId)[0];
     }
 
     findLendingValultAccountPDA() {
@@ -49,8 +90,20 @@ export class KeplerClient {
         return PublicKey.findProgramAddressSync([Buffer.from("LendingUser"), user.toBuffer()], this.program.programId)[0];
     }
 
+    findLandUserAccountPDA(user: PublicKey) {
+        return PublicKey.findProgramAddressSync([Buffer.from("LandUser"), user.toBuffer()], this.program.programId)[0];
+    }
+
     async queryLendingAccount() {
         return await this.program.account.lendingAccount.fetchNullable(this.findLendingAccountPDA());
+    }
+
+    async queryPetAccount() {
+        return await this.program.account.petAccount.fetchNullable(this.findPetAccountPDA());
+    }
+
+    async queryGlobalAccount() {
+        return await this.program.account.globalAccount.fetchNullable(this.findGlobalAccountPDA());
     }
 
     async queryLendingUserAccount(user: PublicKey) {
@@ -67,35 +120,132 @@ export class KeplerClient {
         return this.eventParser.parseLogs(tx.meta.logMessages);
     }
 
+    async queryPetCollectionMetadata() {
+        const metadataPDA = this.metaplex.nfts().pdas().metadata({ mint: this.findPetCollectionPDA() });
+        return await this.queryMetadata(metadataPDA);
+    }
+
     async queryMetadata(pda: PublicKey) {
         const accInfo = await this.connection.getAccountInfo(pda);
         return accInfo && Metadata.deserialize(accInfo.data, 0)[0];
     }
 
-    async queryTokenMetadata() {
-        const tokenMintPDA = this.findTokenPDA();
-        const metadataPDA = await this.metaplex.nfts().pdas().metadata({ mint: tokenMintPDA });
+    async queryGkeplTokenMetadata() {
+        return this.queryTokenMetadata(this.gkeplTokenMatadata.name);
+        // const tokenMintPDA = this.findGkeplTokenPDA();
+        // const metadataPDA = this.metaplex.nfts().pdas().metadata({ mint: tokenMintPDA });
+        // return await this.queryMetadata(metadataPDA);
+    }
+
+    async queryTokenMetadata(name: string) {
+        const tokenMintPDA = this.findTokenPDA(name);
+        const metadataPDA = this.metaplex.nfts().pdas().metadata({ mint: tokenMintPDA });
         return await this.queryMetadata(metadataPDA);
     }
 
-    async createToken(payer: Keypair, name: string, symbol: string, uri: string, decimals: number) {
-        const tokenMintPDA = this.findTokenPDA();
-        const metadataPDA = await this.metaplex.nfts().pdas().metadata({ mint: tokenMintPDA });
-        const modifyComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 300_000 });
-        const transaction = await this.program.methods
-            .createToken(name, symbol, uri, decimals)
-            .accounts({
-                authority: payer.publicKey,
-                metadataAccount: metadataPDA,
-                tokenMint: tokenMintPDA,
-                tokenMetadataProgram: METADATA_PROGRAM_ID,
-                tokenProgram: TOKEN_PROGRAM_ID,
-                rent: SYSVAR_RENT_PUBKEY,
-                systemProgram: SystemProgram.programId,
-            })
-            .transaction();
-        const t = new anchor.web3.Transaction().add(modifyComputeUnits, transaction);
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [payer], { skipPreflight: true });
+    async queryKeplTokenMetadata() {
+        return this.queryTokenMetadata(this.keplTokenMatadata.name);
+        // const tokenMintPDA = this.findKeplTokenPDA();
+        // const metadataPDA = this.metaplex.nfts().pdas().metadata({ mint: tokenMintPDA });
+        // return await this.queryMetadata(metadataPDA);
+    }
+
+    bnToBytes(b: BN) {
+        return hexToBytes(padLeft(b.toBuffer().toString("hex"), 8 * 2));
+    }
+
+    async createToken(admin: Keypair, name: string, symbol: string, uri: string) {
+        const tokenMintPDA = this.findTokenPDA(name);
+        const metadataPDA = this.metaplex.nfts().pdas().metadata({ mint: tokenMintPDA });
+        const method = this.program.methods.createToken(name, symbol, uri).accounts({
+            admin: admin.publicKey,
+            globalAccount: this.findGlobalAccountPDA(),
+            metadataAccount: metadataPDA,
+            tokenMint: tokenMintPDA,
+            tokenMetadataProgram: METADATA_PROGRAM_ID,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            rent: SYSVAR_RENT_PUBKEY,
+            systemProgram: SystemProgram.programId,
+        });
+        // return method.signers([admin]).rpc();
+        const t = new anchor.web3.Transaction().add(await method.transaction());
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+    }
+
+    async mintToken(admin: Keypair, tokenName: string, to: PublicKey, amount: BN) {
+        const tokenMintPDA = this.findTokenPDA(tokenName);
+        let tokenAccount = await spl.getOrCreateAssociatedTokenAccount(this.connection, admin, tokenMintPDA, to);
+        const method = this.program.methods.mintToken(tokenName, amount).accounts({
+            user: admin.publicKey,
+            globalAccount: this.findGlobalAccountPDA(),
+            tokenMint: tokenMintPDA,
+            tokenAccount: tokenAccount.address,
+            systemProgram: SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+        });
+        // return method.signers([admin]).rpc();
+        const t = new anchor.web3.Transaction().add(await method.transaction());
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+    }
+
+    async getTokenBalance(tokenName: string, user: PublicKey) {
+        const tokenMintPDA = this.findTokenPDA(tokenName);
+        let tokenAccount = spl.getAssociatedTokenAddressSync(tokenMintPDA, user);
+        try {
+            return (await this.connection.getTokenAccountBalance(tokenAccount)).value;
+        } catch (err) {
+            return {};
+        }
+    }
+
+    async getKeplBalance(user: PublicKey) {
+        return this.getTokenBalance(this.keplTokenMatadata.name, user);
+    }
+
+    async getGkeplBalance(user: PublicKey) {
+        return this.getTokenBalance(this.gkeplTokenMatadata.name, user);
+    }
+
+    async mintKepl(payer: Keypair, to: PublicKey, amount: BN) {
+        return await this.mintToken(payer, this.keplTokenMatadata.name, to, amount);
+    }
+
+    async mintGkepl(payer: Keypair, to: PublicKey, amount: BN) {
+        return await this.mintToken(payer, this.gkeplTokenMatadata.name, to, amount);
+    }
+
+    async createGkeplToken(payer: Keypair) {
+        const { name, symbol, uri } = this.gkeplTokenMatadata;
+        return await this.createToken(payer, name, symbol, uri);
+    }
+
+    async createKeplToken(payer: Keypair) {
+        const { name, symbol, uri } = this.keplTokenMatadata;
+        return await this.createToken(payer, name, symbol, uri);
+    }
+
+    async createCollection(admin: Keypair, name: string, symbol: string, uri: string) {
+        const collectionPDA = this.findPetCollectionPDA();
+        const collectionMetadataPDA = this.metaplex.nfts().pdas().metadata({ mint: collectionPDA });
+        const collectionMasterEditionPDA = this.metaplex.nfts().pdas().masterEdition({ mint: collectionPDA });
+        const collectionTokenAccount = await spl.getAssociatedTokenAddress(collectionPDA, admin.publicKey);
+        let method = this.program.methods.createCollection(name, symbol, uri).accounts({
+            authority: admin.publicKey,
+            globalAccount: this.findGlobalAccountPDA(),
+            collectionMint: collectionPDA,
+            metadataAccount: collectionMetadataPDA,
+            masterEdition: collectionMasterEditionPDA,
+            tokenAccount: collectionTokenAccount,
+            tokenMetadataProgram: METADATA_PROGRAM_ID,
+        });
+        // return method.signers([admin]).rpc();
+        const t = new anchor.web3.Transaction().add(await method.transaction());
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+    }
+
+    async createPetCollection(admin: Keypair) {
+        const { name, symbol, uri } = this.petCollectionMatadata;
+        return await this.createCollection(admin, name, symbol, uri);
     }
 
     findMetadataPDA(mint: PublicKey) {
@@ -106,6 +256,125 @@ export class KeplerClient {
         return this.metaplex.nfts().pdas().masterEdition({ mint });
     }
 
+    async petInitialize(admin: Keypair) {
+        const method = this.program.methods.petInitialize().accounts({
+            admin: admin.publicKey,
+            petAccount: this.findPetAccountPDA(),
+            rent: SYSVAR_RENT_PUBKEY,
+            systemProgram: SystemProgram.programId,
+        });
+        // return await method.signers([admin]).rpc();
+        const t = new anchor.web3.Transaction().add(await method.transaction());
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+    }
+    async foodBuy(
+        user: Keypair,
+        storeFoodId: BN,
+        currency: PublicKey,
+        amount: BN,
+        price: BN,
+        referrer: PublicKey,
+        feeTo: PublicKey,
+        signer: PublicKey,
+        message: Uint8Array,
+        signature: Uint8Array
+    ) {
+        const vaultTokenAccount = spl.getAssociatedTokenAddressSync(currency, feeTo);
+        const userTokenAccount = spl.getAssociatedTokenAddressSync(currency, user.publicKey);
+        const method = this.program.methods.foodBuy(storeFoodId, currency, amount, price, referrer, Array.from(signature)).accounts({
+            user: user.publicKey,
+            globalAccount: this.findGlobalAccountPDA(),
+            vaultTokenAccount,
+            userTokenAccount,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            ixSysvar: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+        });
+        // return method.signers([user]).rpc();
+
+        const t = new anchor.web3.Transaction().add(
+            anchor.web3.Ed25519Program.createInstructionWithPublicKey({
+                publicKey: signer.toBytes(),
+                message,
+                signature,
+            }),
+            await method.transaction()
+        );
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
+    }
+
+    async petBuy(
+        user: Keypair,
+        storePetId: BN,
+        currency: PublicKey,
+        price: BN,
+        referrer: PublicKey,
+        feeTo: PublicKey,
+        signer: PublicKey,
+        message: Uint8Array,
+        signature: Uint8Array
+    ) {
+        const vaultTokenAccount = spl.getAssociatedTokenAddressSync(currency, feeTo);
+        const userTokenAccount = spl.getAssociatedTokenAddressSync(currency, user.publicKey);
+        const method = this.program.methods.petBuy(storePetId, currency, price, referrer, Array.from(signature)).accounts({
+            user: user.publicKey,
+            globalAccount: this.findGlobalAccountPDA(),
+            vaultTokenAccount,
+            userTokenAccount,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            ixSysvar: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+        });
+        // return method.signers([user]).rpc();
+        const t = new anchor.web3.Transaction().add(
+            anchor.web3.Ed25519Program.createInstructionWithPublicKey({
+                publicKey: signer.toBytes(),
+                message,
+                signature,
+            }),
+            await method.transaction()
+        );
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
+    }
+
+    findPetNftPDA(userPetId: BN) {
+        return PublicKey.findProgramAddressSync([Buffer.from(this.petCollectionMatadata.name), this.bnToBytes(userPetId)], this.program.programId)[0];
+    }
+
+    //TODO, 签名验证失败
+    async petMint(user: Keypair, userPetId: BN, signer: PublicKey, message: Uint8Array, signature: Uint8Array) {
+        const collectionPDA = this.findPetCollectionPDA();
+        const nftMint = this.findPetNftPDA(userPetId);
+        const metadataPDA = this.findMetadataPDA(nftMint);
+        const masterEditionPDA = this.findMasterEditionPDA(nftMint);
+        const tokenAccount = await spl.getAssociatedTokenAddress(nftMint, user.publicKey);
+        const collectionMetadataPDA = this.findMetadataPDA(collectionPDA);
+        const collectionMasterEditionPDA = this.findMasterEditionPDA(collectionPDA);
+        const modifyComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 40_0000 });
+
+        const method = this.program.methods.petMint(this.petCollectionMatadata.name, userPetId, Array.from(signature)).accounts({
+            user: user.publicKey,
+            globalAccount: this.findGlobalAccountPDA(),
+            petAccount: this.findPetAccountPDA(),
+            collectionMint: collectionPDA,
+            collectionMetadataAccount: collectionMetadataPDA,
+            collectionMasterEdition: collectionMasterEditionPDA,
+            nftMint,
+            metadataAccount: metadataPDA,
+            masterEdition: masterEditionPDA,
+            tokenAccount: tokenAccount,
+            tokenMetadataProgram: METADATA_PROGRAM_ID,
+            ixSysvar: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+        });
+        const t = new anchor.web3.Transaction().add(
+            anchor.web3.Ed25519Program.createInstructionWithPublicKey({
+                publicKey: signer.toBytes(),
+                message,
+                signature,
+            }),
+            await method.transaction()
+        );
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
+    }
+
     async lendingInitialize(admin: Keypair, price: BN) {
         const method = this.program.methods.lendingInitialize(price).accounts({
             admin: admin.publicKey,
@@ -113,7 +382,9 @@ export class KeplerClient {
             rent: SYSVAR_RENT_PUBKEY,
             systemProgram: SystemProgram.programId,
         });
-        return await method.signers([admin]).rpc();
+        // return await method.signers([admin]).rpc();
+        const t = new anchor.web3.Transaction().add(await method.transaction());
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
     }
 
     async lendingUpdate(admin: Keypair, price: BN) {
@@ -128,10 +399,11 @@ export class KeplerClient {
     }
 
     async lendingBorrow(user: Keypair, tokenAmount: BN) {
-        const tokenPDA = this.findTokenPDA();
-        const mintAddress = (await this.queryTokenMetadata()).mint;
+        const tokenPDA = this.findGkeplTokenPDA();
+        const mintAddress = (await this.queryGkeplTokenMetadata()).mint;
         const tokenAccount = await spl.getAssociatedTokenAddress(mintAddress, user.publicKey);
-        const method = this.program.methods.lendingBorrow(tokenAmount).accounts({
+        let tokenName = this.gkeplTokenMatadata.name;
+        const method = this.program.methods.lendingBorrow(tokenName, tokenAmount).accounts({
             user: user.publicKey,
             lendingAccount: this.findLendingAccountPDA(),
             vaultAccount: this.findLendingValultAccountPDA(),
@@ -147,10 +419,11 @@ export class KeplerClient {
     }
 
     async lendingRepay(user: Keypair, tokenAmount: BN) {
-        const tokenPDA = this.findTokenPDA();
-        const mintAddress = (await this.queryTokenMetadata()).mint;
+        const tokenPDA = this.findGkeplTokenPDA();
+        const mintAddress = (await this.queryGkeplTokenMetadata()).mint;
         const tokenAccount = await spl.getAssociatedTokenAddress(mintAddress, user.publicKey);
-        const method = this.program.methods.lendingRepay(tokenAmount).accounts({
+        let tokenName = this.gkeplTokenMatadata.name;
+        const method = this.program.methods.lendingRepay(tokenName, tokenAmount).accounts({
             user: user.publicKey,
             lendingAccount: this.findLendingAccountPDA(),
             vaultAccount: this.findLendingValultAccountPDA(),
@@ -176,5 +449,87 @@ export class KeplerClient {
         // return await method.signers([admin]).rpc();
         const t = new anchor.web3.Transaction().add(await method.transaction());
         return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+    }
+
+    async globalInitialize(admin: Keypair, signer: PublicKey) {
+        const method = this.program.methods.globalInitialize(signer).accounts({
+            admin: admin.publicKey,
+            globalAccount: this.findGlobalAccountPDA(),
+            rent: SYSVAR_RENT_PUBKEY,
+            systemProgram: SystemProgram.programId,
+        });
+        // return await method.signers([admin]).rpc();
+
+        const t = new anchor.web3.Transaction().add(await method.transaction());
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+    }
+
+    async landUpgrade(
+        user: Keypair,
+        targetLevel: BN,
+        currency: PublicKey,
+        price: BN,
+        referrer: PublicKey,
+        feeTo: PublicKey,
+        signer: PublicKey,
+        message: Uint8Array,
+        signature: Uint8Array
+    ) {
+        const vaultTokenAccount = spl.getAssociatedTokenAddressSync(currency, feeTo);
+        const userTokenAccount = spl.getAssociatedTokenAddressSync(currency, user.publicKey);
+        const method = this.program.methods.landUpgrade(targetLevel, currency, price, referrer, Array.from(signature)).accounts({
+            user: user.publicKey,
+            globalAccount: this.findGlobalAccountPDA(),
+            landUserAccount: this.findLandUserAccountPDA(user.publicKey),
+            vaultTokenAccount,
+            userTokenAccount,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            ixSysvar: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+        });
+        // return method.signers([user]).rpc();
+
+        const t = new anchor.web3.Transaction().add(
+            anchor.web3.Ed25519Program.createInstructionWithPublicKey({
+                publicKey: signer.toBytes(),
+                message,
+                signature,
+            }),
+            await method.transaction()
+        );
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
+    }
+
+    async petUpgrade(
+        user: Keypair,
+        userPetId: BN,
+        targetLevel: BN,
+        currency: PublicKey,
+        price: BN,
+        referrer: PublicKey,
+        feeTo: PublicKey,
+        signer: PublicKey,
+        message: Uint8Array,
+        signature: Uint8Array
+    ) {
+        const vaultTokenAccount = spl.getAssociatedTokenAddressSync(currency, feeTo);
+        const userTokenAccount = spl.getAssociatedTokenAddressSync(currency, user.publicKey);
+        const method = this.program.methods.petUpgrade(userPetId, targetLevel, currency, price, referrer, Array.from(signature)).accounts({
+            user: user.publicKey,
+            globalAccount: this.findGlobalAccountPDA(),
+            vaultTokenAccount,
+            userTokenAccount,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            ixSysvar: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+        });
+        // return method.signers([user]).rpc();
+        const t = new anchor.web3.Transaction().add(
+            anchor.web3.Ed25519Program.createInstructionWithPublicKey({
+                publicKey: signer.toBytes(),
+                message,
+                signature,
+            }),
+            await method.transaction()
+        );
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
     }
 }

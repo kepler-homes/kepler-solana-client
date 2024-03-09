@@ -3,9 +3,14 @@ export type Kepler = {
   "name": "kepler",
   "constants": [
     {
-      "name": "TOKEN_SEED",
+      "name": "GLOBAL_SEED",
       "type": "string",
-      "value": "\"Token\""
+      "value": "\"Global\""
+    },
+    {
+      "name": "LAND_USER_SEED",
+      "type": "string",
+      "value": "\"LandUser\""
     },
     {
       "name": "LENDING_SEED",
@@ -21,6 +26,16 @@ export type Kepler = {
       "name": "LENDING_USER_SEED",
       "type": "string",
       "value": "\"LendingUser\""
+    },
+    {
+      "name": "PET_SEED",
+      "type": "string",
+      "value": "\"Pet\""
+    },
+    {
+      "name": "PET_USER_SEED",
+      "type": "string",
+      "value": "\"PetUser\""
     }
   ],
   "instructions": [
@@ -28,9 +43,14 @@ export type Kepler = {
       "name": "createToken",
       "accounts": [
         {
-          "name": "authority",
+          "name": "admin",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
           "name": "tokenMint",
@@ -80,10 +100,536 @@ export type Kepler = {
         {
           "name": "uri",
           "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "mintToken",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          "name": "tokenDecimals",
-          "type": "u8"
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "tokenName",
+          "type": "string"
+        },
+        {
+          "name": "mintAmount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "createCollection",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collectionMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "metadataAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "masterEdition",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMetadataProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "symbol",
+          "type": "string"
+        },
+        {
+          "name": "uri",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "petBuy",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ixSysvar",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "storePetId",
+          "type": "u64"
+        },
+        {
+          "name": "currency",
+          "type": "publicKey"
+        },
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey"
+        },
+        {
+          "name": "signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "petUpgrade",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ixSysvar",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "userPetId",
+          "type": "u64"
+        },
+        {
+          "name": "targetLevel",
+          "type": "u64"
+        },
+        {
+          "name": "currency",
+          "type": "publicKey"
+        },
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey"
+        },
+        {
+          "name": "signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "foodBuy",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ixSysvar",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "storeFoodId",
+          "type": "u64"
+        },
+        {
+          "name": "currency",
+          "type": "publicKey"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey"
+        },
+        {
+          "name": "signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "landUpgrade",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "landUserAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ixSysvar",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "targetLevel",
+          "type": "u64"
+        },
+        {
+          "name": "currency",
+          "type": "publicKey"
+        },
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey"
+        },
+        {
+          "name": "signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "petInitialize",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "petAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "petMint",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "petAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collectionMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collectionMetadataAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collectionMasterEdition",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "nftMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "metadataAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "masterEdition",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMetadataProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "ixSysvar",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "collectionName",
+          "type": "string"
+        },
+        {
+          "name": "userPetId",
+          "type": "u64"
+        },
+        {
+          "name": "signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
         }
       ]
     },
@@ -195,6 +741,10 @@ export type Kepler = {
       ],
       "args": [
         {
+          "name": "tokenName",
+          "type": "string"
+        },
+        {
           "name": "tokenAmount",
           "type": "u64"
         }
@@ -251,6 +801,10 @@ export type Kepler = {
       ],
       "args": [
         {
+          "name": "tokenName",
+          "type": "string"
+        },
+        {
           "name": "tokenAmount",
           "type": "u64"
         }
@@ -294,9 +848,68 @@ export type Kepler = {
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "globalInitialize",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "signer",
+          "type": "publicKey"
+        }
+      ]
     }
   ],
   "accounts": [
+    {
+      "name": "globalAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "publicKey"
+          },
+          {
+            "name": "signer",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "landUserAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "level",
+            "type": "u64"
+          }
+        ]
+      }
+    },
     {
       "name": "lendingAccount",
       "type": {
@@ -328,9 +941,110 @@ export type Kepler = {
           }
         ]
       }
+    },
+    {
+      "name": "petUserAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "referrer",
+            "type": "publicKey"
+          },
+          {
+            "name": "nftMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "nftId",
+            "type": "u64"
+          },
+          {
+            "name": "mintTime",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "petAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nextTokenId",
+            "type": "u64"
+          }
+        ]
+      }
     }
   ],
   "events": [
+    {
+      "name": "FoodBuyEvent",
+      "fields": [
+        {
+          "name": "user",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "storeFoodId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "currency",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "price",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "LandUpgradeEvent",
+      "fields": [
+        {
+          "name": "user",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "targetLevel",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "currency",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "price",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
+    },
     {
       "name": "LendingBorrowEvent",
       "fields": [
@@ -347,11 +1061,6 @@ export type Kepler = {
         {
           "name": "solAmount",
           "type": "u64",
-          "index": false
-        },
-        {
-          "name": "time",
-          "type": "i64",
           "index": false
         }
       ]
@@ -373,10 +1082,90 @@ export type Kepler = {
           "name": "solAmount",
           "type": "u64",
           "index": false
+        }
+      ]
+    },
+    {
+      "name": "PetBuyEvent",
+      "fields": [
+        {
+          "name": "user",
+          "type": "publicKey",
+          "index": false
         },
         {
-          "name": "time",
-          "type": "i64",
+          "name": "storePetId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "currency",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "price",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "PetMintEvent",
+      "fields": [
+        {
+          "name": "user",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "userPetId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "tokenId",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "PetUpgradeEvent",
+      "fields": [
+        {
+          "name": "user",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "userPetId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "targetLevel",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "currency",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "price",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey",
           "index": false
         }
       ]
@@ -387,6 +1176,16 @@ export type Kepler = {
       "code": 6000,
       "name": "InvalidTokenAmount",
       "msg": "invalid token amount"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidSignature",
+      "msg": "invalid signature."
+    },
+    {
+      "code": 6002,
+      "name": "InvalidLevel",
+      "msg": "invalid level."
     }
   ]
 };
@@ -396,9 +1195,14 @@ export const IDL: Kepler = {
   "name": "kepler",
   "constants": [
     {
-      "name": "TOKEN_SEED",
+      "name": "GLOBAL_SEED",
       "type": "string",
-      "value": "\"Token\""
+      "value": "\"Global\""
+    },
+    {
+      "name": "LAND_USER_SEED",
+      "type": "string",
+      "value": "\"LandUser\""
     },
     {
       "name": "LENDING_SEED",
@@ -414,6 +1218,16 @@ export const IDL: Kepler = {
       "name": "LENDING_USER_SEED",
       "type": "string",
       "value": "\"LendingUser\""
+    },
+    {
+      "name": "PET_SEED",
+      "type": "string",
+      "value": "\"Pet\""
+    },
+    {
+      "name": "PET_USER_SEED",
+      "type": "string",
+      "value": "\"PetUser\""
     }
   ],
   "instructions": [
@@ -421,9 +1235,14 @@ export const IDL: Kepler = {
       "name": "createToken",
       "accounts": [
         {
-          "name": "authority",
+          "name": "admin",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
           "name": "tokenMint",
@@ -473,10 +1292,536 @@ export const IDL: Kepler = {
         {
           "name": "uri",
           "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "mintToken",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          "name": "tokenDecimals",
-          "type": "u8"
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "tokenName",
+          "type": "string"
+        },
+        {
+          "name": "mintAmount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "createCollection",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collectionMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "metadataAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "masterEdition",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMetadataProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "symbol",
+          "type": "string"
+        },
+        {
+          "name": "uri",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "petBuy",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ixSysvar",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "storePetId",
+          "type": "u64"
+        },
+        {
+          "name": "currency",
+          "type": "publicKey"
+        },
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey"
+        },
+        {
+          "name": "signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "petUpgrade",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ixSysvar",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "userPetId",
+          "type": "u64"
+        },
+        {
+          "name": "targetLevel",
+          "type": "u64"
+        },
+        {
+          "name": "currency",
+          "type": "publicKey"
+        },
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey"
+        },
+        {
+          "name": "signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "foodBuy",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ixSysvar",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "storeFoodId",
+          "type": "u64"
+        },
+        {
+          "name": "currency",
+          "type": "publicKey"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey"
+        },
+        {
+          "name": "signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "landUpgrade",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "landUserAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ixSysvar",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "targetLevel",
+          "type": "u64"
+        },
+        {
+          "name": "currency",
+          "type": "publicKey"
+        },
+        {
+          "name": "price",
+          "type": "u64"
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey"
+        },
+        {
+          "name": "signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "petInitialize",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "petAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "petMint",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "petAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collectionMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collectionMetadataAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collectionMasterEdition",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "nftMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "metadataAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "masterEdition",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMetadataProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "ixSysvar",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "collectionName",
+          "type": "string"
+        },
+        {
+          "name": "userPetId",
+          "type": "u64"
+        },
+        {
+          "name": "signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
         }
       ]
     },
@@ -588,6 +1933,10 @@ export const IDL: Kepler = {
       ],
       "args": [
         {
+          "name": "tokenName",
+          "type": "string"
+        },
+        {
           "name": "tokenAmount",
           "type": "u64"
         }
@@ -644,6 +1993,10 @@ export const IDL: Kepler = {
       ],
       "args": [
         {
+          "name": "tokenName",
+          "type": "string"
+        },
+        {
           "name": "tokenAmount",
           "type": "u64"
         }
@@ -687,9 +2040,68 @@ export const IDL: Kepler = {
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "globalInitialize",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "signer",
+          "type": "publicKey"
+        }
+      ]
     }
   ],
   "accounts": [
+    {
+      "name": "globalAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "publicKey"
+          },
+          {
+            "name": "signer",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "landUserAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "level",
+            "type": "u64"
+          }
+        ]
+      }
+    },
     {
       "name": "lendingAccount",
       "type": {
@@ -721,9 +2133,110 @@ export const IDL: Kepler = {
           }
         ]
       }
+    },
+    {
+      "name": "petUserAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "referrer",
+            "type": "publicKey"
+          },
+          {
+            "name": "nftMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "nftId",
+            "type": "u64"
+          },
+          {
+            "name": "mintTime",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "petAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nextTokenId",
+            "type": "u64"
+          }
+        ]
+      }
     }
   ],
   "events": [
+    {
+      "name": "FoodBuyEvent",
+      "fields": [
+        {
+          "name": "user",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "storeFoodId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "currency",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "price",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "LandUpgradeEvent",
+      "fields": [
+        {
+          "name": "user",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "targetLevel",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "currency",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "price",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
+    },
     {
       "name": "LendingBorrowEvent",
       "fields": [
@@ -740,11 +2253,6 @@ export const IDL: Kepler = {
         {
           "name": "solAmount",
           "type": "u64",
-          "index": false
-        },
-        {
-          "name": "time",
-          "type": "i64",
           "index": false
         }
       ]
@@ -766,10 +2274,90 @@ export const IDL: Kepler = {
           "name": "solAmount",
           "type": "u64",
           "index": false
+        }
+      ]
+    },
+    {
+      "name": "PetBuyEvent",
+      "fields": [
+        {
+          "name": "user",
+          "type": "publicKey",
+          "index": false
         },
         {
-          "name": "time",
-          "type": "i64",
+          "name": "storePetId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "currency",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "price",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "PetMintEvent",
+      "fields": [
+        {
+          "name": "user",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "userPetId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "tokenId",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "PetUpgradeEvent",
+      "fields": [
+        {
+          "name": "user",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "userPetId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "targetLevel",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "currency",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "price",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "referrer",
+          "type": "publicKey",
           "index": false
         }
       ]
@@ -780,6 +2368,16 @@ export const IDL: Kepler = {
       "code": 6000,
       "name": "InvalidTokenAmount",
       "msg": "invalid token amount"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidSignature",
+      "msg": "invalid signature."
+    },
+    {
+      "code": 6002,
+      "name": "InvalidLevel",
+      "msg": "invalid level."
     }
   ]
 };
