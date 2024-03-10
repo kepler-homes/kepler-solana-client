@@ -40,9 +40,9 @@ async function main() {
     await setInviteCode();
     console.log("user", user.publicKey.toBase58());
 
-    // await verifyLending();
-    // await verifyPetBuy();
-    // await verifyPetUpgrade();
+    await verifyLending();
+    await verifyPetBuy();
+    await verifyPetUpgrade();
     await verifyPetMint();
 }
 
