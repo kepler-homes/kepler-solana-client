@@ -18,19 +18,19 @@ export class KeplerClient {
     public gkeplTokenMatadata = {
         name: "Kepler gToken",
         symbol: "gKEPL",
-        uri: "https://solana-api.kepler.homes/api/metadata/gkepl.json",
+        uri: "https://solana-api.kepler.homes/api/metadata/gkepl",
     };
 
     public keplTokenMatadata = {
         name: "Kepler Token",
         symbol: "KEPL",
-        uri: "https://solana-api.kepler.homes/api/metadata/kepl.json",
+        uri: "https://solana-api.kepler.homes/api/metadata/kepl",
     };
 
     public petCollectionMatadata = {
         name: "Kepler Bot Collection",
         symbol: "KEPLBC",
-        uri: "https://solana-api.kepler.homes/api/metadata/pet-collection.json",
+        uri: "https://solana-api.kepler.homes/api/metadata/collection",
     };
 
     public static programId: string = "Ac65CKN49nxHiB9HaKw7HwYT3wLynSRVy51AN9yNAafN";
