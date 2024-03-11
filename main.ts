@@ -42,15 +42,70 @@ async function main() {
 
     await verifyLending();
     await verifyPetBuy();
-    await verifyPetUpgrade();
-    await verifyPetMint();
+    // await verifyPetUpgrade();
+    // await verifyPetMint();
+    await verifyFoodBuy();
+    // await verifyLandUpgrade();
 }
+
+
+async function verifyLandUpgrade() {
+    const currency = client.findGkeplTokenPDA();
+    console.log("user", user.publicKey.toBase58());
+    console.log("currency", currency.toBase58());
+    const url = `${apiDomain}/api/land/upgradeParams?Authorization=${token}&user=${user.publicKey.toBase58()}&currency=${currency.toBase58()}`;
+    console.log("url", url);
+    let res = await axios.get(url);
+    console.log(res.data);
+    let { price, referrer, message, signature, fee_to, level, signer } = res.data.data;
+    const ts = await client.landUpgrade(
+        user,
+        new BN(level),
+        currency,
+        new BN(price),
+        new PublicKey(referrer),
+        new PublicKey(fee_to),
+        new PublicKey(signer),
+        base58.decode(message),
+        base58.decode(signature)
+    );
+    console.log("landUpgrade", ts);
+}
+
+
+
 
 async function verifyLending() {
     const borrowAmount = new BN(200000e6);
     console.log("lendingBorrow", await client.lendingBorrow(user, borrowAmount));
     const repayAmount = new BN(10e6);
     console.log("lendingRepay", await client.lendingRepay(user, repayAmount));
+}
+
+async function verifyFoodBuy() {
+    const currency = client.findGkeplTokenPDA();
+    const storeFoodId = new BN(4);
+    const amount = new BN(2);
+    console.log("user", user.publicKey.toBase58());
+    console.log("currency", currency.toBase58());
+    const url = `${apiDomain}/api/food/buyParams?Authorization=${token}&user=${user.publicKey.toBase58()}&currency=${currency.toBase58()}&store_food_id=${storeFoodId.toNumber()}&amount=${amount.toNumber()}`;
+    console.log("url", url);
+    let res = await axios.get(url);
+    console.log(res.data);
+    let { price, referrer, message, signature, fee_to, signer } = res.data.data;
+    const ts = await client.foodBuy(
+        user,
+        storeFoodId,
+        currency,
+        amount,
+        new BN(price),
+        new PublicKey(referrer),
+        new PublicKey(fee_to),
+        new PublicKey(signer),
+        base58.decode(message),
+        base58.decode(signature)
+    );
+    console.log("foodBuy", ts);
 }
 
 //确保用户账号有足够gkepl币

@@ -1054,6 +1054,11 @@ export type Kepler = {
           "index": false
         },
         {
+          "name": "currency",
+          "type": "publicKey",
+          "index": false
+        },
+        {
           "name": "tokenAmount",
           "type": "u64",
           "index": false
@@ -1070,6 +1075,11 @@ export type Kepler = {
       "fields": [
         {
           "name": "user",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "currency",
           "type": "publicKey",
           "index": false
         },
@@ -2246,6 +2256,11 @@ export const IDL: Kepler = {
           "index": false
         },
         {
+          "name": "currency",
+          "type": "publicKey",
+          "index": false
+        },
+        {
           "name": "tokenAmount",
           "type": "u64",
           "index": false
@@ -2262,6 +2277,11 @@ export const IDL: Kepler = {
       "fields": [
         {
           "name": "user",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "currency",
           "type": "publicKey",
           "index": false
         },
