@@ -42,10 +42,10 @@ async function main() {
 
     await verifyLending();
     await verifyPetBuy();
-    // await verifyPetUpgrade();
-    // await verifyPetMint();
+    await verifyPetUpgrade();
+    await verifyPetMint();
     await verifyFoodBuy();
-    // await verifyLandUpgrade();
+    await verifyLandUpgrade();
 }
 
 
