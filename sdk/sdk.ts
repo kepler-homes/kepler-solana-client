@@ -90,6 +90,10 @@ export class KeplerClient {
         return PublicKey.findProgramAddressSync([Buffer.from("LendingUser"), user.toBuffer()], this.program.programId)[0];
     }
 
+    findClaimUserAccountPDA(tokenName: string, user: PublicKey) {
+        return PublicKey.findProgramAddressSync([Buffer.from("ClaimUser"), Buffer.from(tokenName), user.toBuffer()], this.program.programId)[0];
+    }
+
     findLandUserAccountPDA(user: PublicKey) {
         return PublicKey.findProgramAddressSync([Buffer.from("LandUser"), user.toBuffer()], this.program.programId)[0];
     }
@@ -109,6 +113,11 @@ export class KeplerClient {
     async queryLendingUserAccount(user: PublicKey) {
         const pda = this.findLendingUserAccountPDA(user);
         return await this.program.account.lendingUserAccount.fetchNullable(pda);
+    }
+
+    async queryClaimUserAccount(tokenName: string, user: PublicKey) {
+        const pda = this.findClaimUserAccountPDA(tokenName, user);
+        return await this.program.account.claimUserAccount.fetchNullable(pda);
     }
 
     getSolAmountByTokenAmount(borrowPrice: BN, tokenAmount: BN) {
@@ -167,6 +176,7 @@ export class KeplerClient {
             rent: SYSVAR_RENT_PUBKEY,
             systemProgram: SystemProgram.programId,
         });
+
         // return method.signers([admin]).rpc();
         const t = new anchor.web3.Transaction().add(await method.transaction());
         return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
@@ -238,8 +248,8 @@ export class KeplerClient {
             tokenAccount: collectionTokenAccount,
             tokenMetadataProgram: METADATA_PROGRAM_ID,
         });
-        // return method.signers([admin]).rpc();
-        const t = new anchor.web3.Transaction().add(await method.transaction());
+        const modifyComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 40_0000 });
+        const t = new anchor.web3.Transaction().add(modifyComputeUnits, await method.transaction());
         return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
     }
 
@@ -339,7 +349,28 @@ export class KeplerClient {
         return PublicKey.findProgramAddressSync([Buffer.from(this.petCollectionMatadata.name), this.bnToBytes(userPetId)], this.program.programId)[0];
     }
 
-    //TODO, 签名验证失败
+    async claimToken(user: Keypair, tokenName: string, claimId: BN, expireAt: BN, amount: BN, signer: PublicKey, message: Uint8Array, signature: Uint8Array) {
+        const tokenMintPDA = this.findTokenPDA(tokenName);
+        const edIx = anchor.web3.Ed25519Program.createInstructionWithPublicKey({
+            publicKey: signer.toBytes(),
+            message,
+            signature,
+        });
+        const method = this.program.methods.claimToken(tokenName, claimId, expireAt, amount, Array.from(signature)).accounts({
+            user: user.publicKey,
+            globalAccount: this.findGlobalAccountPDA(),
+            tokenMint: tokenMintPDA,
+            tokenAccount: spl.getAssociatedTokenAddressSync(tokenMintPDA, user.publicKey),
+            userAccount: this.findClaimUserAccountPDA(tokenName, user.publicKey),
+            systemProgram: SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            ixSysvar: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+        });
+        // return method.signers([user]).rpc();
+        const t = new anchor.web3.Transaction().add(edIx, await method.transaction());
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: false });
+    }
+
     async petMint(user: Keypair, userPetId: BN, signer: PublicKey, message: Uint8Array, signature: Uint8Array) {
         const collectionPDA = this.findPetCollectionPDA();
         const nftMint = this.findPetNftPDA(userPetId);
@@ -348,8 +379,12 @@ export class KeplerClient {
         const tokenAccount = await spl.getAssociatedTokenAddress(nftMint, user.publicKey);
         const collectionMetadataPDA = this.findMetadataPDA(collectionPDA);
         const collectionMasterEditionPDA = this.findMasterEditionPDA(collectionPDA);
+        const edIx = anchor.web3.Ed25519Program.createInstructionWithPublicKey({
+            publicKey: signer.toBytes(),
+            message,
+            signature,
+        });
         const modifyComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 40_0000 });
-
         const method = this.program.methods.petMint(this.petCollectionMatadata.name, userPetId, Array.from(signature)).accounts({
             user: user.publicKey,
             globalAccount: this.findGlobalAccountPDA(),
@@ -364,15 +399,9 @@ export class KeplerClient {
             tokenMetadataProgram: METADATA_PROGRAM_ID,
             ixSysvar: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
         });
-        const t = new anchor.web3.Transaction().add(
-            anchor.web3.Ed25519Program.createInstructionWithPublicKey({
-                publicKey: signer.toBytes(),
-                message,
-                signature,
-            }),
-            await method.transaction()
-        );
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
+
+        const tx = new anchor.web3.Transaction().add(edIx, modifyComputeUnits, await method.transaction());
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, tx, [user], { skipPreflight: false });
     }
 
     async lendingInitialize(admin: Keypair, price: BN) {

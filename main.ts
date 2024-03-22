@@ -40,14 +40,44 @@ async function main() {
     await setInviteCode();
     console.log("user", user.publicKey.toBase58());
 
-    await verifyLending();
-    await verifyPetBuy();
-    await verifyPetUpgrade();
-    await verifyPetMint();
-    await verifyFoodBuy();
-    await verifyLandUpgrade();
+    // await verifyLending();
+    // await verifyPetBuy();
+    // await verifyPetUpgrade();
+    // await verifyPetMint();
+    // await verifyFoodBuy();
+    // await verifyLandUpgrade();
+    await verifyClaimToken();
 }
 
+async function verifyClaimToken() {
+    console.log("user", user.publicKey.toBase58());
+    const url = `${apiDomain}/api/token/claimGKeplParams?Authorization=${token}`;
+    console.log("url", url);
+    let res = await axios.get(url);
+    console.log(res.data);
+    const data = res.data.data;
+    console.log(
+        user,
+        data.token_name,
+        new BN(data.claim_id),
+        new BN(data.expire_at),
+        new BN(data.amount),
+        new PublicKey(data.signer),
+        base58.decode(data.message),
+        base58.decode(data.signature)
+    );
+    const ts = await client.claimToken(
+        user,
+        data.token_name,
+        new BN(data.claim_id),
+        new BN(data.expire_at),
+        new BN(data.amount),
+        new PublicKey(data.signer),
+        base58.decode(data.message),
+        base58.decode(data.signature)
+    );
+    console.log("claimToken", ts);
+}
 
 async function verifyLandUpgrade() {
     const currency = client.findGkeplTokenPDA();
@@ -71,9 +101,6 @@ async function verifyLandUpgrade() {
     );
     console.log("landUpgrade", ts);
 }
-
-
-
 
 async function verifyLending() {
     const borrowAmount = new BN(200000e6);

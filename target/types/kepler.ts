@@ -3,6 +3,11 @@ export type Kepler = {
   "name": "kepler",
   "constants": [
     {
+      "name": "CLAIM_USER_SEED",
+      "type": "string",
+      "value": "\"ClaimUser\""
+    },
+    {
       "name": "GLOBAL_SEED",
       "type": "string",
       "value": "\"Global\""
@@ -100,6 +105,83 @@ export type Kepler = {
         {
           "name": "uri",
           "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "claimToken",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "ixSysvar",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "tokenName",
+          "type": "string"
+        },
+        {
+          "name": "claimId",
+          "type": "u64"
+        },
+        {
+          "name": "expireAt",
+          "type": "u64"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
         }
       ]
     },
@@ -883,6 +965,22 @@ export type Kepler = {
   ],
   "accounts": [
     {
+      "name": "claimUserAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "lastClaimId",
+            "type": "u64"
+          },
+          {
+            "name": "lastClaimTime",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "globalAccount",
       "type": {
         "kind": "struct",
@@ -1196,6 +1294,21 @@ export type Kepler = {
       "code": 6002,
       "name": "InvalidLevel",
       "msg": "invalid level."
+    },
+    {
+      "code": 6003,
+      "name": "DuplicateClaim",
+      "msg": "duplicate claim."
+    },
+    {
+      "code": 6004,
+      "name": "ClaimIdExpired",
+      "msg": "claim id expired."
+    },
+    {
+      "code": 6005,
+      "name": "InsufficientWaitTime",
+      "msg": "insufficient wait time."
     }
   ]
 };
@@ -1205,6 +1318,11 @@ export const IDL: Kepler = {
   "name": "kepler",
   "constants": [
     {
+      "name": "CLAIM_USER_SEED",
+      "type": "string",
+      "value": "\"ClaimUser\""
+    },
+    {
       "name": "GLOBAL_SEED",
       "type": "string",
       "value": "\"Global\""
@@ -1302,6 +1420,83 @@ export const IDL: Kepler = {
         {
           "name": "uri",
           "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "claimToken",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "globalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "ixSysvar",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "tokenName",
+          "type": "string"
+        },
+        {
+          "name": "claimId",
+          "type": "u64"
+        },
+        {
+          "name": "expireAt",
+          "type": "u64"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
         }
       ]
     },
@@ -2085,6 +2280,22 @@ export const IDL: Kepler = {
   ],
   "accounts": [
     {
+      "name": "claimUserAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "lastClaimId",
+            "type": "u64"
+          },
+          {
+            "name": "lastClaimTime",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "globalAccount",
       "type": {
         "kind": "struct",
@@ -2398,6 +2609,21 @@ export const IDL: Kepler = {
       "code": 6002,
       "name": "InvalidLevel",
       "msg": "invalid level."
+    },
+    {
+      "code": 6003,
+      "name": "DuplicateClaim",
+      "msg": "duplicate claim."
+    },
+    {
+      "code": 6004,
+      "name": "ClaimIdExpired",
+      "msg": "claim id expired."
+    },
+    {
+      "code": 6005,
+      "name": "InsufficientWaitTime",
+      "msg": "insufficient wait time."
     }
   ]
 };
