@@ -1079,6 +1079,31 @@ export type Kepler = {
   ],
   "events": [
     {
+      "name": "ClaimTokenEvent",
+      "fields": [
+        {
+          "name": "user",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "mint",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "claimId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
+    {
       "name": "FoodBuyEvent",
       "fields": [
         {
@@ -2393,6 +2418,31 @@ export const IDL: Kepler = {
     }
   ],
   "events": [
+    {
+      "name": "ClaimTokenEvent",
+      "fields": [
+        {
+          "name": "user",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "mint",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "claimId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
     {
       "name": "FoodBuyEvent",
       "fields": [

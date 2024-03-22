@@ -56,16 +56,6 @@ async function verifyClaimToken() {
     let res = await axios.get(url);
     console.log(res.data);
     const data = res.data.data;
-    console.log(
-        user,
-        data.token_name,
-        new BN(data.claim_id),
-        new BN(data.expire_at),
-        new BN(data.amount),
-        new PublicKey(data.signer),
-        base58.decode(data.message),
-        base58.decode(data.signature)
-    );
     const ts = await client.claimToken(
         user,
         data.token_name,
