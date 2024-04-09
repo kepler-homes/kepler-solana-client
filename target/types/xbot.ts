@@ -1,6 +1,6 @@
-export type Kepler = {
+export type Xbot = {
   "version": "0.0.1",
-  "name": "kepler",
+  "name": "xbot",
   "constants": [
     {
       "name": "CLAIM_USER_SEED",
@@ -1338,9 +1338,9 @@ export type Kepler = {
   ]
 };
 
-export const IDL: Kepler = {
+export const IDL: Xbot = {
   "version": "0.0.1",
-  "name": "kepler",
+  "name": "xbot",
   "constants": [
     {
       "name": "CLAIM_USER_SEED",

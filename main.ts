@@ -1,4 +1,4 @@
-import { KeplerClient } from "./sdk/sdk";
+import { XbotClient } from "./sdk/sdk";
 import * as bs58 from "bs58";
 import { privateKey } from "./key.json";
 import { Keypair, PublicKey } from "@solana/web3.js";
@@ -8,7 +8,7 @@ import nacl from "tweetnacl";
 import { decodeUTF8 } from "tweetnacl-util";
 import base58 from "bs58";
 
-var client: KeplerClient;
+var client: XbotClient;
 var user: Keypair;
 
 const apiDomain = "https://solana-abi.kepler.homes";
@@ -33,8 +33,8 @@ async function setInviteCode() {
 }
 
 async function main() {
-    // client = new KeplerClient("https://api.mainnet-beta.solana.com");
-    client = KeplerClient.fromEndpoint("https://api.devnet.solana.com");
+    // client = new XbotClient("https://api.mainnet-beta.solana.com");
+    client = XbotClient.fromEndpoint("https://api.devnet.solana.com");
     user = Keypair.fromSecretKey(bs58.decode(privateKey));
     await login();
     await setInviteCode();
@@ -105,7 +105,7 @@ async function verifyFoodBuy() {
     const amount = new BN(2);
     console.log("user", user.publicKey.toBase58());
     console.log("currency", currency.toBase58());
-    const url = `${apiDomain}/api/food/buyParams?Authorization=${token}&user=${user.publicKey.toBase58()}&currency=${currency.toBase58()}&store_food_id=${storeFoodId.toNumber()}&amount=${amount.toNumber()}`;
+    const url = `${apiDomain}/api/food/buyParams?address=${user.publicKey.toBase58()}&currency=${currency.toBase58()}&store_food_id=${storeFoodId.toNumber()}&amount=${amount.toNumber()}`;
     console.log("url", url);
     let res = await axios.get(url);
     console.log(res.data);
@@ -130,7 +130,7 @@ async function verifyPetBuy() {
     const currency = client.findGkeplTokenPDA();
     const storePetId = new BN(2);
     console.log("currency", currency.toBase58());
-    const url = `${apiDomain}/api/pet/buyParams?Authorization=${token}&user=${user.publicKey.toBase58()}&currency=${currency.toBase58()}&store_pet_id=${storePetId.toNumber()}`;
+    const url = `${apiDomain}/api/pet/buyParams?address=${user.publicKey.toBase58()}&currency=${currency.toBase58()}&store_pet_id=${storePetId.toNumber()}`;
     console.log("url", url);
     let res = await axios.get(url);
     console.log(res.data);
@@ -150,7 +150,7 @@ async function verifyPetBuy() {
 }
 
 async function queryUserPets() {
-    const url = `${apiDomain}/api/pet/userPets?Authorization=${token}`;
+    const url = `${apiDomain}/api/pet/userPets?address=${user.publicKey.toBase58()}`;
     let res = await axios.get(url);
     return res?.data?.data || [];
 }
@@ -162,7 +162,7 @@ async function verifyPetUpgrade() {
         const currency = client.findGkeplTokenPDA();
         const userPetId = new BN(pets.pop().id);
         console.log("currency", currency.toBase58());
-        const url = `${apiDomain}/api/pet/upgradeParams?Authorization=${token}&user=${user.publicKey.toBase58()}&currency=${currency.toBase58()}&user_pet_id=${userPetId.toNumber()}`;
+        const url = `${apiDomain}/api/pet/upgradeParams?address=${user.publicKey.toBase58()}&currency=${currency.toBase58()}&user_pet_id=${userPetId.toNumber()}`;
         console.log("url", url);
         let res = await axios.get(url);
         console.log(res.data);
@@ -193,7 +193,7 @@ async function verifyPetMint() {
         const userPetId = new BN(pets.pop().id);
         console.log("user", user.publicKey.toBase58());
         console.log("currency", currency.toBase58());
-        const url = `${apiDomain}/api/pet/mintParams?Authorization=${token}&user=${user.publicKey.toBase58()}&currency=${currency.toBase58()}&user_pet_id=${userPetId.toNumber()}`;
+        const url = `${apiDomain}/api/pet/mintParams?address=${user.publicKey.toBase58()}&currency=${currency.toBase58()}&user_pet_id=${userPetId.toNumber()}`;
         console.log("url", url);
         let res = await axios.get(url);
         console.log(res.data);

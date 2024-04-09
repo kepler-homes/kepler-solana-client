@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program, BN, EventParser, BorshCoder, AnchorProvider, Provider } from "@coral-xyz/anchor";
-import { Kepler, IDL } from "../target/types/kepler";
+import { Xbot, IDL } from "../target/types/xbot";
 import { Keypair, PublicKey, Connection, SYSVAR_RENT_PUBKEY, SystemProgram } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import * as spl from "@solana/spl-token";
@@ -8,40 +8,40 @@ import { Metadata, PROGRAM_ID as METADATA_PROGRAM_ID } from "@metaplex-foundatio
 import { Metaplex } from "@metaplex-foundation/js";
 import { hexToBytes, padLeft } from "web3-utils";
 
-export class KeplerClient {
+export class XbotClient {
     public connection: Connection;
-    public program: Program<Kepler>;
+    public program: Program<Xbot>;
     public metaplex: Metaplex;
     public eventParser: EventParser;
     public endpoint: string;
 
     public gkeplTokenMatadata = {
-        name: "Kepler gToken",
+        name: "Xbot gToken",
         symbol: "gKEPL",
-        uri: "https://solana-api.kepler.homes/api/metadata/gkepl",
+        uri: "https://solana-api.xbot.homes/api/metadata/gkepl",
     };
 
     public keplTokenMatadata = {
-        name: "Kepler Token",
+        name: "Xbot Token",
         symbol: "KEPL",
-        uri: "https://solana-api.kepler.homes/api/metadata/kepl",
+        uri: "https://solana-api.xbot.homes/api/metadata/kepl",
     };
 
     public petCollectionMatadata = {
-        name: "Kepler Bot Collection",
+        name: "Xbot Bot Collection",
         symbol: "KEPLBC",
-        uri: "https://solana-api.kepler.homes/api/metadata/collection",
+        uri: "https://solana-api.xbot.homes/api/metadata/collection",
     };
 
     public static programId: string = "Ac65CKN49nxHiB9HaKw7HwYT3wLynSRVy51AN9yNAafN";
 
     public static fromEndpoint(endpoint: string) {
         const provider = new AnchorProvider(new Connection(endpoint), null, AnchorProvider.defaultOptions());
-        const program = new Program(IDL, new PublicKey(KeplerClient.programId), provider);
-        return new KeplerClient(program);
+        const program = new Program(IDL, new PublicKey(XbotClient.programId), provider);
+        return new XbotClient(program);
     }
 
-    constructor(program: Program<Kepler>) {
+    constructor(program: Program<Xbot>) {
         this.connection = program["_provider"].connection;
         this.program = program;
         this.metaplex = Metaplex.make(this.connection);
