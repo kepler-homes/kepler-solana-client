@@ -8,50 +8,33 @@ import nacl from "tweetnacl";
 import { decodeUTF8 } from "tweetnacl-util";
 import base58 from "bs58";
 
-var client: XbotClient;
-var user: Keypair;
+let client = XbotClient.fromEndpoint("https://api.devnet.solana.com");
+let user = Keypair.fromSecretKey(bs58.decode(privateKey));
+let address = user.publicKey.toBase58();
 
-const apiDomain = "https://solana-abi.kepler.homes";
-let token = "";
+const prefix = "https://b.kepler.homes/api/xbot";
 
-async function login() {
-    const message = "login";
-    const messageBytes = decodeUTF8(message);
-    const signature = base58.encode(nacl.sign.detached(messageBytes, user.secretKey));
-    const url = `${apiDomain}/api/user/login?address=${user.publicKey.toBase58()}&signature=${signature}`;
-    console.log("url: ", url);
-    let res = await axios.get(url);
-    token = res.data.data.token;
-    console.log("token:", token);
-}
-
-async function setInviteCode() {
-    const url = `${apiDomain}/api/user/inviter?invite_code=KEPL_12345678&Authorization=${token}`;
-    console.log("set invite code url: ", url);
-    let res = await axios.post(url);
-    console.log("set invite code", res.data);
-}
+let tokens = {
+    gkepl: new PublicKey("6jzYRF9MTWJn4JoFXPJd8RJwiYyNRWEApbru4pvTvxHC"),
+    usdc: new PublicKey("6NLPdMzsMA6119Q3Vzf1AUMKsqNMVZNvN3wbpsYLBbMx"),
+    kepl: new PublicKey("GMh5KoUfUxdFRKQdYxWzJjYhoQ9PCNWxYw1tA3XXgmhi"),
+};
 
 async function main() {
     // client = new XbotClient("https://api.mainnet-beta.solana.com");
-    client = XbotClient.fromEndpoint("https://api.devnet.solana.com");
-    user = Keypair.fromSecretKey(bs58.decode(privateKey));
-    await login();
-    await setInviteCode();
     console.log("user", user.publicKey.toBase58());
-
-    // await verifyLending();
+    await verifyLending();
     // await verifyPetBuy();
     // await verifyPetUpgrade();
     // await verifyPetMint();
     // await verifyFoodBuy();
     // await verifyLandUpgrade();
-    await verifyClaimToken();
+    // await verifyClaimToken();
 }
 
 async function verifyClaimToken() {
     console.log("user", user.publicKey.toBase58());
-    const url = `${apiDomain}/api/token/claimGKeplParams?Authorization=${token}`;
+    const url = `${prefix}/token/claimGKeplParams?uuuu=${address}`;
     console.log("url", url);
     let res = await axios.get(url);
     console.log(res.data);
@@ -70,10 +53,10 @@ async function verifyClaimToken() {
 }
 
 async function verifyLandUpgrade() {
-    const currency = client.findGkeplTokenPDA();
+    const currency = tokens.gkepl;
     console.log("user", user.publicKey.toBase58());
     console.log("currency", currency.toBase58());
-    const url = `${apiDomain}/api/land/upgradeParams?Authorization=${token}&user=${user.publicKey.toBase58()}&currency=${currency.toBase58()}`;
+    const url = `${prefix}/land/upgradeParams?uuuu=${address}&currency=${currency.toBase58()}`;
     console.log("url", url);
     let res = await axios.get(url);
     console.log(res.data);
@@ -93,19 +76,19 @@ async function verifyLandUpgrade() {
 }
 
 async function verifyLending() {
-    const borrowAmount = new BN(200000e6);
-    console.log("lendingBorrow", await client.lendingBorrow(user, borrowAmount));
-    const repayAmount = new BN(10e6);
-    console.log("lendingRepay", await client.lendingRepay(user, repayAmount));
+    // const borrowAmount = new BN(10000);
+    // console.log("lendingBorrow", await client.lendingBorrow(user, tokens.gkepl, borrowAmount));
+    const repayAmount = new BN(2000);
+    console.log("lendingRepay", await client.lendingRepay(user, tokens.gkepl, repayAmount));
 }
 
 async function verifyFoodBuy() {
-    const currency = client.findGkeplTokenPDA();
+    const currency = tokens.gkepl;
     const storeFoodId = new BN(4);
     const amount = new BN(2);
     console.log("user", user.publicKey.toBase58());
     console.log("currency", currency.toBase58());
-    const url = `${apiDomain}/api/food/buyParams?address=${user.publicKey.toBase58()}&currency=${currency.toBase58()}&store_food_id=${storeFoodId.toNumber()}&amount=${amount.toNumber()}`;
+    const url = `${prefix}/food/buyParams?address=${user.publicKey.toBase58()}&currency=${currency.toBase58()}&store_food_id=${storeFoodId.toNumber()}&amount=${amount.toNumber()}`;
     console.log("url", url);
     let res = await axios.get(url);
     console.log(res.data);
@@ -127,10 +110,10 @@ async function verifyFoodBuy() {
 
 //确保用户账号有足够gkepl币
 async function verifyPetBuy() {
-    const currency = client.findGkeplTokenPDA();
+    const currency = tokens.gkepl;
     const storePetId = new BN(2);
     console.log("currency", currency.toBase58());
-    const url = `${apiDomain}/api/pet/buyParams?address=${user.publicKey.toBase58()}&currency=${currency.toBase58()}&store_pet_id=${storePetId.toNumber()}`;
+    const url = `${prefix}/pet/buyParams?uuuu=${address}&currency=${currency.toBase58()}&store_pet_id=${storePetId.toNumber()}`;
     console.log("url", url);
     let res = await axios.get(url);
     console.log(res.data);
@@ -150,7 +133,7 @@ async function verifyPetBuy() {
 }
 
 async function queryUserPets() {
-    const url = `${apiDomain}/api/pet/userPets?address=${user.publicKey.toBase58()}`;
+    const url = `${prefix}/pet/userPets?uuuu=${address}`;
     let res = await axios.get(url);
     return res?.data?.data || [];
 }
@@ -159,10 +142,10 @@ async function verifyPetUpgrade() {
     let pets = await queryUserPets();
     console.log("user pets", JSON.stringify(pets));
     if (pets.length > 0) {
-        const currency = client.findGkeplTokenPDA();
+        const currency = tokens.gkepl;
         const userPetId = new BN(pets.pop().id);
         console.log("currency", currency.toBase58());
-        const url = `${apiDomain}/api/pet/upgradeParams?address=${user.publicKey.toBase58()}&currency=${currency.toBase58()}&user_pet_id=${userPetId.toNumber()}`;
+        const url = `${prefix}/pet/upgradeParams?uuuu=${address}&currency=${currency.toBase58()}&user_pet_id=${userPetId.toNumber()}`;
         console.log("url", url);
         let res = await axios.get(url);
         console.log(res.data);
@@ -189,11 +172,11 @@ async function verifyPetMint() {
     console.log("user pets", JSON.stringify(pets));
     pets = pets.filter((item) => item.token_id == 0);
     if (pets.length > 0) {
-        const currency = client.findGkeplTokenPDA();
+        const currency = tokens.gkepl;
         const userPetId = new BN(pets.pop().id);
         console.log("user", user.publicKey.toBase58());
         console.log("currency", currency.toBase58());
-        const url = `${apiDomain}/api/pet/mintParams?address=${user.publicKey.toBase58()}&currency=${currency.toBase58()}&user_pet_id=${userPetId.toNumber()}`;
+        const url = `${prefix}/pet/mintParams?uuuu=${address}&currency=${currency.toBase58()}&user_pet_id=${userPetId.toNumber()}`;
         console.log("url", url);
         let res = await axios.get(url);
         console.log(res.data);

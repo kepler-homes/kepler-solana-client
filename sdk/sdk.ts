@@ -2,7 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program, BN, EventParser, BorshCoder, AnchorProvider, Provider } from "@coral-xyz/anchor";
 import { Xbot, IDL } from "../target/types/xbot";
 import { Keypair, PublicKey, Connection, SYSVAR_RENT_PUBKEY, SystemProgram } from "@solana/web3.js";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import * as spl from "@solana/spl-token";
 import { Metadata, PROGRAM_ID as METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import { Metaplex } from "@metaplex-foundation/js";
@@ -15,25 +15,13 @@ export class XbotClient {
     public eventParser: EventParser;
     public endpoint: string;
 
-    public gkeplTokenMatadata = {
-        name: "Xbot gToken",
-        symbol: "gKEPL",
-        uri: "https://solana-api.xbot.homes/api/metadata/gkepl",
-    };
-
-    public keplTokenMatadata = {
-        name: "Xbot Token",
-        symbol: "KEPL",
-        uri: "https://solana-api.xbot.homes/api/metadata/kepl",
-    };
-
     public petCollectionMatadata = {
-        name: "Xbot Bot Collection",
+        name: "Kepler Bot Collection",
         symbol: "KEPLBC",
-        uri: "https://solana-api.xbot.homes/api/metadata/collection",
+        uri: "https://solana-api.kepler.homes/api/metadata/pet-collection.json",
     };
 
-    public static programId: string = "Ac65CKN49nxHiB9HaKw7HwYT3wLynSRVy51AN9yNAafN";
+    public static programId: string = "HxtauC4P2CJcvw5p5QvPysBLnPVa8M2tc8RczEtiGKSb";
 
     public static fromEndpoint(endpoint: string) {
         const provider = new AnchorProvider(new Connection(endpoint), null, AnchorProvider.defaultOptions());
@@ -49,17 +37,8 @@ export class XbotClient {
         this.endpoint = this.connection["_rpcEndpoint"];
     }
 
-    findGkeplTokenPDA() {
-        return this.findTokenPDA(this.gkeplTokenMatadata.name);
-        // return PublicKey.findProgramAddressSync([Buffer.from("gkepl")], this.program.programId)[0];
-    }
-
     findTokenPDA(name: string) {
         return PublicKey.findProgramAddressSync([Buffer.from(name)], this.program.programId)[0];
-    }
-
-    findKeplTokenPDA() {
-        return this.findTokenPDA(this.keplTokenMatadata.name);
     }
 
     findPetCollectionPDA() {
@@ -70,8 +49,8 @@ export class XbotClient {
         return PublicKey.findProgramAddressSync([Buffer.from("Lending")], this.program.programId)[0];
     }
 
-    findGlobalAccountPDA() {
-        return PublicKey.findProgramAddressSync([Buffer.from("Global")], this.program.programId)[0];
+    findXbotAccountPDA() {
+        return PublicKey.findProgramAddressSync([Buffer.from("XBot")], this.program.programId)[0];
     }
 
     findPetAccountPDA() {
@@ -82,16 +61,20 @@ export class XbotClient {
         return PublicKey.findProgramAddressSync([Buffer.from("Land")], this.program.programId)[0];
     }
 
-    findLendingValultAccountPDA() {
-        return PublicKey.findProgramAddressSync([Buffer.from("LendingVault")], this.program.programId)[0];
+    findSolValultAccountPDA() {
+        return PublicKey.findProgramAddressSync([Buffer.from("Vault")], this.program.programId)[0];
+    }
+
+    findVaultTokenAccountPDA(mint: PublicKey) {
+        return PublicKey.findProgramAddressSync([Buffer.from("Vault"), mint.toBuffer()], this.program.programId)[0];
     }
 
     findLendingUserAccountPDA(user: PublicKey) {
         return PublicKey.findProgramAddressSync([Buffer.from("LendingUser"), user.toBuffer()], this.program.programId)[0];
     }
 
-    findClaimUserAccountPDA(tokenName: string, user: PublicKey) {
-        return PublicKey.findProgramAddressSync([Buffer.from("ClaimUser"), Buffer.from(tokenName), user.toBuffer()], this.program.programId)[0];
+    findClaimUserAccountPDA(mint: PublicKey, user: PublicKey) {
+        return PublicKey.findProgramAddressSync([Buffer.from("ClaimUser"), mint.toBuffer(), user.toBuffer()], this.program.programId)[0];
     }
 
     findLandUserAccountPDA(user: PublicKey) {
@@ -106,8 +89,8 @@ export class XbotClient {
         return await this.program.account.petAccount.fetchNullable(this.findPetAccountPDA());
     }
 
-    async queryGlobalAccount() {
-        return await this.program.account.globalAccount.fetchNullable(this.findGlobalAccountPDA());
+    async queryXbotAccount() {
+        return await this.program.account.xbotAccount.fetchNullable(this.findXbotAccountPDA());
     }
 
     async queryLendingUserAccount(user: PublicKey) {
@@ -115,8 +98,8 @@ export class XbotClient {
         return await this.program.account.lendingUserAccount.fetchNullable(pda);
     }
 
-    async queryClaimUserAccount(tokenName: string, user: PublicKey) {
-        const pda = this.findClaimUserAccountPDA(tokenName, user);
+    async queryClaimUserAccount(mint: PublicKey, user: PublicKey) {
+        const pda = this.findClaimUserAccountPDA(mint, user);
         return await this.program.account.claimUserAccount.fetchNullable(pda);
     }
 
@@ -139,24 +122,10 @@ export class XbotClient {
         return accInfo && Metadata.deserialize(accInfo.data, 0)[0];
     }
 
-    async queryGkeplTokenMetadata() {
-        return this.queryTokenMetadata(this.gkeplTokenMatadata.name);
-        // const tokenMintPDA = this.findGkeplTokenPDA();
-        // const metadataPDA = this.metaplex.nfts().pdas().metadata({ mint: tokenMintPDA });
-        // return await this.queryMetadata(metadataPDA);
-    }
-
     async queryTokenMetadata(name: string) {
         const tokenMintPDA = this.findTokenPDA(name);
         const metadataPDA = this.metaplex.nfts().pdas().metadata({ mint: tokenMintPDA });
         return await this.queryMetadata(metadataPDA);
-    }
-
-    async queryKeplTokenMetadata() {
-        return this.queryTokenMetadata(this.keplTokenMatadata.name);
-        // const tokenMintPDA = this.findKeplTokenPDA();
-        // const metadataPDA = this.metaplex.nfts().pdas().metadata({ mint: tokenMintPDA });
-        // return await this.queryMetadata(metadataPDA);
     }
 
     bnToBytes(b: BN) {
@@ -168,7 +137,7 @@ export class XbotClient {
         const metadataPDA = this.metaplex.nfts().pdas().metadata({ mint: tokenMintPDA });
         const method = this.program.methods.createToken(name, symbol, uri).accounts({
             admin: admin.publicKey,
-            globalAccount: this.findGlobalAccountPDA(),
+            xbotAccount: this.findXbotAccountPDA(),
             metadataAccount: metadataPDA,
             tokenMint: tokenMintPDA,
             tokenMetadataProgram: METADATA_PROGRAM_ID,
@@ -184,10 +153,11 @@ export class XbotClient {
 
     async mintToken(admin: Keypair, tokenName: string, to: PublicKey, amount: BN) {
         const tokenMintPDA = this.findTokenPDA(tokenName);
+        console.log(`${tokenName}: ${tokenMintPDA}`);
         let tokenAccount = await spl.getOrCreateAssociatedTokenAccount(this.connection, admin, tokenMintPDA, to);
         const method = this.program.methods.mintToken(tokenName, amount).accounts({
             user: admin.publicKey,
-            globalAccount: this.findGlobalAccountPDA(),
+            xbotAccount: this.findXbotAccountPDA(),
             tokenMint: tokenMintPDA,
             tokenAccount: tokenAccount.address,
             systemProgram: SystemProgram.programId,
@@ -198,40 +168,13 @@ export class XbotClient {
         return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
     }
 
-    async getTokenBalance(tokenName: string, user: PublicKey) {
-        const tokenMintPDA = this.findTokenPDA(tokenName);
-        let tokenAccount = spl.getAssociatedTokenAddressSync(tokenMintPDA, user);
+    async getTokenBalance(mint: PublicKey, user: PublicKey) {
+        let tokenAccount = spl.getAssociatedTokenAddressSync(mint, user);
         try {
             return (await this.connection.getTokenAccountBalance(tokenAccount)).value;
         } catch (err) {
             return {};
         }
-    }
-
-    async getKeplBalance(user: PublicKey) {
-        return this.getTokenBalance(this.keplTokenMatadata.name, user);
-    }
-
-    async getGkeplBalance(user: PublicKey) {
-        return this.getTokenBalance(this.gkeplTokenMatadata.name, user);
-    }
-
-    async mintKepl(payer: Keypair, to: PublicKey, amount: BN) {
-        return await this.mintToken(payer, this.keplTokenMatadata.name, to, amount);
-    }
-
-    async mintGkepl(payer: Keypair, to: PublicKey, amount: BN) {
-        return await this.mintToken(payer, this.gkeplTokenMatadata.name, to, amount);
-    }
-
-    async createGkeplToken(payer: Keypair) {
-        const { name, symbol, uri } = this.gkeplTokenMatadata;
-        return await this.createToken(payer, name, symbol, uri);
-    }
-
-    async createKeplToken(payer: Keypair) {
-        const { name, symbol, uri } = this.keplTokenMatadata;
-        return await this.createToken(payer, name, symbol, uri);
     }
 
     async createCollection(admin: Keypair, name: string, symbol: string, uri: string) {
@@ -241,7 +184,7 @@ export class XbotClient {
         const collectionTokenAccount = await spl.getAssociatedTokenAddress(collectionPDA, admin.publicKey);
         let method = this.program.methods.createCollection(name, symbol, uri).accounts({
             authority: admin.publicKey,
-            globalAccount: this.findGlobalAccountPDA(),
+            xbotAccount: this.findXbotAccountPDA(),
             collectionMint: collectionPDA,
             metadataAccount: collectionMetadataPDA,
             masterEdition: collectionMasterEditionPDA,
@@ -293,7 +236,7 @@ export class XbotClient {
         const userTokenAccount = spl.getAssociatedTokenAddressSync(currency, user.publicKey);
         const method = this.program.methods.foodBuy(storeFoodId, currency, amount, price, referrer, Array.from(signature)).accounts({
             user: user.publicKey,
-            globalAccount: this.findGlobalAccountPDA(),
+            xbotAccount: this.findXbotAccountPDA(),
             vaultTokenAccount,
             userTokenAccount,
             tokenProgram: TOKEN_PROGRAM_ID,
@@ -327,7 +270,7 @@ export class XbotClient {
         const userTokenAccount = spl.getAssociatedTokenAddressSync(currency, user.publicKey);
         const method = this.program.methods.petBuy(storePetId, currency, price, referrer, Array.from(signature)).accounts({
             user: user.publicKey,
-            globalAccount: this.findGlobalAccountPDA(),
+            xbotAccount: this.findXbotAccountPDA(),
             vaultTokenAccount,
             userTokenAccount,
             tokenProgram: TOKEN_PROGRAM_ID,
@@ -349,26 +292,26 @@ export class XbotClient {
         return PublicKey.findProgramAddressSync([Buffer.from(this.petCollectionMatadata.name), this.bnToBytes(userPetId)], this.program.programId)[0];
     }
 
-    async claimToken(user: Keypair, tokenName: string, claimId: BN, expireAt: BN, amount: BN, signer: PublicKey, message: Uint8Array, signature: Uint8Array) {
-        const tokenMintPDA = this.findTokenPDA(tokenName);
+    async claimToken(user: Keypair, mint: PublicKey, claimId: BN, expireAt: BN, amount: BN, signer: PublicKey, message: Uint8Array, signature: Uint8Array) {
         const edIx = anchor.web3.Ed25519Program.createInstructionWithPublicKey({
             publicKey: signer.toBytes(),
             message,
             signature,
         });
-        const method = this.program.methods.claimToken(tokenName, claimId, expireAt, amount, Array.from(signature)).accounts({
+        const method = this.program.methods.claimToken(claimId, expireAt, amount, Array.from(signature)).accounts({
             user: user.publicKey,
-            globalAccount: this.findGlobalAccountPDA(),
-            tokenMint: tokenMintPDA,
-            tokenAccount: spl.getAssociatedTokenAddressSync(tokenMintPDA, user.publicKey),
-            userAccount: this.findClaimUserAccountPDA(tokenName, user.publicKey),
+            xbotAccount: this.findXbotAccountPDA(),
+            tokenMint: mint,
+            vaultTokenAccount: this.findVaultTokenAccountPDA(mint),
+            userTokenAccount: spl.getAssociatedTokenAddressSync(mint, user.publicKey),
+            userAccount: this.findClaimUserAccountPDA(mint, user.publicKey),
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             ixSysvar: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
         });
         // return method.signers([user]).rpc();
         const t = new anchor.web3.Transaction().add(edIx, await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: false });
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
     }
 
     async petMint(user: Keypair, userPetId: BN, signer: PublicKey, message: Uint8Array, signature: Uint8Array) {
@@ -387,7 +330,7 @@ export class XbotClient {
         const modifyComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 40_0000 });
         const method = this.program.methods.petMint(this.petCollectionMatadata.name, userPetId, Array.from(signature)).accounts({
             user: user.publicKey,
-            globalAccount: this.findGlobalAccountPDA(),
+            xbotAccount: this.findXbotAccountPDA(),
             petAccount: this.findPetAccountPDA(),
             collectionMint: collectionPDA,
             collectionMetadataAccount: collectionMetadataPDA,
@@ -416,6 +359,23 @@ export class XbotClient {
         return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
     }
 
+    async initializeVault(admin: Keypair, mint: PublicKey) {
+        let vaultPDA = this.findVaultTokenAccountPDA(mint);
+        const method = this.program.methods.lendingInitializeVault().accounts({
+            admin: admin.publicKey,
+            xbotAccount: this.findXbotAccountPDA(),
+            vaultAccount: vaultPDA,
+            tokenMint: mint,
+            rent: SYSVAR_RENT_PUBKEY,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        });
+        // return await method.signers([admin]).rpc();
+        const t = new anchor.web3.Transaction().add(await method.transaction());
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: false });
+    }
+
     async lendingUpdate(admin: Keypair, price: BN) {
         const method = this.program.methods.lendingUpdate(price).accounts({
             admin: admin.publicKey,
@@ -427,18 +387,15 @@ export class XbotClient {
         return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
     }
 
-    async lendingBorrow(user: Keypair, tokenAmount: BN) {
-        const tokenPDA = this.findGkeplTokenPDA();
-        const mintAddress = (await this.queryGkeplTokenMetadata()).mint;
-        const tokenAccount = await spl.getAssociatedTokenAddress(mintAddress, user.publicKey);
-        let tokenName = this.gkeplTokenMatadata.name;
-        const method = this.program.methods.lendingBorrow(tokenName, tokenAmount).accounts({
+    async lendingBorrow(user: Keypair, gkeplMint: PublicKey, tokenAmount: BN) {
+        const method = this.program.methods.lendingBorrow(tokenAmount).accounts({
             user: user.publicKey,
             lendingAccount: this.findLendingAccountPDA(),
-            vaultAccount: this.findLendingValultAccountPDA(),
+            solVaultAccount: this.findSolValultAccountPDA(),
+            vaultTokenAccount: this.findVaultTokenAccountPDA(gkeplMint),
             userAccount: this.findLendingUserAccountPDA(user.publicKey),
-            tokenMint: tokenPDA,
-            tokenAccount: tokenAccount,
+            tokenMint: gkeplMint,
+            userTokenAccount: await spl.getAssociatedTokenAddress(gkeplMint, user.publicKey),
             tokenProgram: TOKEN_PROGRAM_ID,
             systemProgram: SystemProgram.programId,
         });
@@ -447,18 +404,15 @@ export class XbotClient {
         return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
     }
 
-    async lendingRepay(user: Keypair, tokenAmount: BN) {
-        const tokenPDA = this.findGkeplTokenPDA();
-        const mintAddress = (await this.queryGkeplTokenMetadata()).mint;
-        const tokenAccount = await spl.getAssociatedTokenAddress(mintAddress, user.publicKey);
-        let tokenName = this.gkeplTokenMatadata.name;
-        const method = this.program.methods.lendingRepay(tokenName, tokenAmount).accounts({
+    async lendingRepay(user: Keypair, gkeplMint: PublicKey, tokenAmount: BN) {
+        const method = this.program.methods.lendingRepay(tokenAmount).accounts({
             user: user.publicKey,
             lendingAccount: this.findLendingAccountPDA(),
-            vaultAccount: this.findLendingValultAccountPDA(),
+            solVaultAccount: this.findSolValultAccountPDA(),
+            vaultTokenAccount: this.findVaultTokenAccountPDA(gkeplMint),
             userAccount: this.findLendingUserAccountPDA(user.publicKey),
-            tokenMint: tokenPDA,
-            tokenAccount: tokenAccount,
+            tokenMint: gkeplMint,
+            userTokenAccount: await spl.getAssociatedTokenAddress(gkeplMint, user.publicKey),
             tokenProgram: TOKEN_PROGRAM_ID,
             systemProgram: SystemProgram.programId,
         });
@@ -467,23 +421,38 @@ export class XbotClient {
         return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
     }
 
-    async lendingEmergencyWithdraw(admin: Keypair, to: PublicKey, amount: BN) {
-        const method = this.program.methods.lendingEmergencyWithdraw(amount).accounts({
+    async emergencyWithdrawSol(admin: Keypair, to: PublicKey, amount: BN) {
+        const method = this.program.methods.emergencyWithdrawSol(amount).accounts({
             admin: admin.publicKey,
-            vaultAccount: this.findLendingValultAccountPDA(),
-            lendingAccount: this.findLendingAccountPDA(),
+            solVaultAccount: this.findSolValultAccountPDA(),
+            xbotAccount: this.findXbotAccountPDA(),
             recipientAccount: to,
             systemProgram: SystemProgram.programId,
         });
-        // return await method.signers([admin]).rpc();
         const t = new anchor.web3.Transaction().add(await method.transaction());
         return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
     }
 
-    async globalInitialize(admin: Keypair, signer: PublicKey) {
-        const method = this.program.methods.globalInitialize(signer).accounts({
+    async emergencyWithdrawToken(admin: Keypair, mint: PublicKey, to: PublicKey, amount: BN) {
+        const method = this.program.methods.emergencyWithdrawToken(amount).accounts({
             admin: admin.publicKey,
-            globalAccount: this.findGlobalAccountPDA(),
+            xbotAccount: this.findXbotAccountPDA(),
+            tokenMint: mint,
+            vaultTokenAccount: this.findVaultTokenAccountPDA(mint),
+            userTokenAccount: spl.getAssociatedTokenAddressSync(mint, to),
+            recipientAccount: to,
+            systemProgram: SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+        });
+        // return method.signers([user]).rpc();
+        const t = new anchor.web3.Transaction().add(await method.transaction());
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+    }
+
+    async initializeXbot(admin: Keypair, signer: PublicKey) {
+        const method = this.program.methods.initializeXbot(signer).accounts({
+            admin: admin.publicKey,
+            xbotAccount: this.findXbotAccountPDA(),
             rent: SYSVAR_RENT_PUBKEY,
             systemProgram: SystemProgram.programId,
         });
@@ -508,7 +477,7 @@ export class XbotClient {
         const userTokenAccount = spl.getAssociatedTokenAddressSync(currency, user.publicKey);
         const method = this.program.methods.landUpgrade(targetLevel, currency, price, referrer, Array.from(signature)).accounts({
             user: user.publicKey,
-            globalAccount: this.findGlobalAccountPDA(),
+            xbotAccount: this.findXbotAccountPDA(),
             landUserAccount: this.findLandUserAccountPDA(user.publicKey),
             vaultTokenAccount,
             userTokenAccount,
@@ -544,7 +513,7 @@ export class XbotClient {
         const userTokenAccount = spl.getAssociatedTokenAddressSync(currency, user.publicKey);
         const method = this.program.methods.petUpgrade(userPetId, targetLevel, currency, price, referrer, Array.from(signature)).accounts({
             user: user.publicKey,
-            globalAccount: this.findGlobalAccountPDA(),
+            xbotAccount: this.findXbotAccountPDA(),
             vaultTokenAccount,
             userTokenAccount,
             tokenProgram: TOKEN_PROGRAM_ID,
