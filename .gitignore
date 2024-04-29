@@ -10,3 +10,4 @@ yarn.lock
 .yarnrc.yml
 Cargo.lock
 key.json
+keys.json

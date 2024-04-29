@@ -4,8 +4,6 @@ import { privateKey } from "./key.json";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 const axios = require("axios");
-import nacl from "tweetnacl";
-import { decodeUTF8 } from "tweetnacl-util";
 import base58 from "bs58";
 
 let client = XbotClient.fromEndpoint("https://api.devnet.solana.com");
@@ -23,13 +21,13 @@ let tokens = {
 async function main() {
     // client = new XbotClient("https://api.mainnet-beta.solana.com");
     console.log("user", user.publicKey.toBase58());
-    await verifyLending();
+    // await verifyLending();
     // await verifyPetBuy();
     // await verifyPetUpgrade();
     // await verifyPetMint();
     // await verifyFoodBuy();
     // await verifyLandUpgrade();
-    // await verifyClaimToken();
+    await verifyClaimToken();
 }
 
 async function verifyClaimToken() {
@@ -41,7 +39,7 @@ async function verifyClaimToken() {
     const data = res.data.data;
     const ts = await client.claimToken(
         user,
-        data.token_name,
+        new PublicKey(data.token_mint),
         new BN(data.claim_id),
         new BN(data.expire_at),
         new BN(data.amount),
