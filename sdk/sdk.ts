@@ -16,12 +16,12 @@ export class XbotClient {
     public endpoint: string;
 
     public petCollectionMatadata = {
-        name: "Kepler Bot Collection",
-        symbol: "KEPLBC",
-        uri: "https://solana-api.kepler.homes/api/metadata/pet-collection.json",
+        name: "xBot Characters",
+        symbol: "xBotCharCl",
+        uri: "https://xbot.bi/api/xbot/metadata/collection",
     };
 
-    public static programId: string = "HxtauC4P2CJcvw5p5QvPysBLnPVa8M2tc8RczEtiGKSb";
+    public static programId: string = "BbMscgEMLHayJmYqZTFpLKUqJTcSaBrVvp41T3VzPzDd";
 
     public static fromEndpoint(endpoint: string) {
         const provider = new AnchorProvider(new Connection(endpoint), null, AnchorProvider.defaultOptions());
@@ -416,9 +416,9 @@ export class XbotClient {
             tokenProgram: TOKEN_PROGRAM_ID,
             systemProgram: SystemProgram.programId,
         });
-        // return await method.signers([user]).rpc();
-        const t = new anchor.web3.Transaction().add(await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
+        return await method.signers([user]).rpc();
+        // const t = new anchor.web3.Transaction().add(await method.transaction());
+        // return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
     }
 
     async emergencyWithdrawSol(admin: Keypair, to: PublicKey, amount: BN) {

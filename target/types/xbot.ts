@@ -1128,6 +1128,10 @@ export type Xbot = {
           {
             "name": "solAmount",
             "type": "u64"
+          },
+          {
+            "name": "repayAmount",
+            "type": "u64"
           }
         ]
       }
@@ -2580,6 +2584,10 @@ export const IDL: Xbot = {
           },
           {
             "name": "solAmount",
+            "type": "u64"
+          },
+          {
+            "name": "repayAmount",
             "type": "u64"
           }
         ]
