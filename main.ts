@@ -16,7 +16,7 @@ const NETWORK_TOKENS = {
         gkrp: new PublicKey("6jzYRF9MTWJn4JoFXPJd8RJwiYyNRWEApbru4pvTvxHC"),
     },
     mainnet: {
-        krp: new PublicKey("aZnnG9aRKbYzpyBSc56oFpcsokM4vHiCWddC1cELe7c"),
+        krp: new PublicKey("7UXKboga8ZiceA6FkxWQJC1MRjqSpBbmtt3CUAuJqCDt"),
         gkrp: new PublicKey("9JSVhycyit58LmwsZisTgX6GxE1r9ktfCxUhNPRCBUEX"),
     },
 };
