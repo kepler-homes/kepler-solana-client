@@ -81,11 +81,15 @@ async function verifyLending() {
     // get sol price from https://docs.chain.link/data-feeds/solana/using-data-feeds-off-chain
 
     const solAmount = new BN(1e9);
-    //estimated token amount = i128::from(sol_amount) * price / 10i128.pow(u32::from(decimals)) / 1000 * 85 / 100;
+    //estimated token amount
+    // let usd_amount = i128::from(sol_amount) * sol_price / 10i128.pow(u32::from(sol_decimals)) / 1000;
+    // let token_amount = usd_amount * 1_000_000 / token_price * 85 / 100;
     console.log("lendingBorrow", await client.lendingBorrow(user, tokens.gkrp, solAmount));
 
     const tokenAmount = new BN(111e6);
-    //estimated sol amount =  i128::from(token_amount) * 10i128.pow(u32::from(decimals)) * 1000 * 100 / price / 85
+    //estimated sol amount
+    // let usd_amount = i128::from(token_amount) * token_price / 1_000_000 * 100 / 85;
+    // let sol_amount = usd_amount * 1000 * 10i128.pow(u32::from(decimals)) / sol_price;
     console.log("lendingRepay", await client.lendingRepay(user, tokens.gkrp, tokenAmount));
 }
 

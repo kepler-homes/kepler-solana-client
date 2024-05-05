@@ -1476,6 +1476,11 @@ export type Xbot = {
       "code": 6007,
       "name": "InvalidSolAmount",
       "msg": "invalid sol amount"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidSolPrice",
+      "msg": "invalid sol price"
     }
   ]
 };
@@ -2958,6 +2963,11 @@ export const IDL: Xbot = {
       "code": 6007,
       "name": "InvalidSolAmount",
       "msg": "invalid sol amount"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidSolPrice",
+      "msg": "invalid sol price"
     }
   ]
 };
