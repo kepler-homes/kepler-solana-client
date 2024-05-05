@@ -9,6 +9,7 @@ import { Metaplex } from "@metaplex-foundation/js";
 import { hexToBytes, padLeft } from "web3-utils";
 
 export class XbotClient {
+    CHAINLINK_PROGRAM_ID = "HEvSKofvBgfaexv23kMabbYqxasxU3mQ4ibBMEmJWHny";
     public connection: Connection;
     public program: Program<Xbot>;
     public metaplex: Metaplex;
@@ -80,7 +81,13 @@ export class XbotClient {
     findLandUserAccountPDA(user: PublicKey) {
         return PublicKey.findProgramAddressSync([Buffer.from("LandUser"), user.toBuffer()], this.program.programId)[0];
     }
-
+    getNetworkName() {
+        const url = this.connection["_rpcEndpoint"];
+        if (url.indexOf("mainnet") > 0) return "mainnet";
+        if (url.indexOf("testnet") > 0) return "testnet";
+        if (url.indexOf("devnet") > 0) return "devnet";
+        return "localhost";
+    }
     async queryLendingAccount() {
         return await this.program.account.lendingAccount.fetchNullable(this.findLendingAccountPDA());
     }
@@ -387,8 +394,13 @@ export class XbotClient {
         return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
     }
 
-    async lendingBorrow(user: Keypair, gkeplMint: PublicKey, tokenAmount: BN) {
-        const method = this.program.methods.lendingBorrow(tokenAmount).accounts({
+    getFeed() {
+        //https://docs.chain.link/data-feeds/price-feeds/addresses?network=solana&page=2
+        return this.getNetworkName() == "mainnet" ? "CH31Xns5z3M1cTAbKW34jcxPPciazARpijcHj9rxtemt" : "99B2bTijsU6f1GCT73HmdR7HCFFjGMBcPZY6jZ96ynrR";
+    }
+
+    async lendingBorrow(user: Keypair, gkeplMint: PublicKey, solAmount: BN) {
+        const method = this.program.methods.lendingBorrow(solAmount).accounts({
             user: user.publicKey,
             lendingAccount: this.findLendingAccountPDA(),
             solVaultAccount: this.findSolValultAccountPDA(),
@@ -398,6 +410,8 @@ export class XbotClient {
             userTokenAccount: await spl.getAssociatedTokenAddress(gkeplMint, user.publicKey),
             tokenProgram: TOKEN_PROGRAM_ID,
             systemProgram: SystemProgram.programId,
+            chainlinkFeed: this.getFeed(),
+            chainlinkProgram: this.CHAINLINK_PROGRAM_ID,
         });
         // return await method.signers([user]).rpc();
         const t = new anchor.web3.Transaction().add(await method.transaction());
@@ -415,10 +429,12 @@ export class XbotClient {
             userTokenAccount: await spl.getAssociatedTokenAddress(gkeplMint, user.publicKey),
             tokenProgram: TOKEN_PROGRAM_ID,
             systemProgram: SystemProgram.programId,
+            chainlinkFeed: this.getFeed(),
+            chainlinkProgram: this.CHAINLINK_PROGRAM_ID,
         });
-        return await method.signers([user]).rpc();
-        // const t = new anchor.web3.Transaction().add(await method.transaction());
-        // return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
+        // return await method.signers([user]).rpc();
+        const t = new anchor.web3.Transaction().add(await method.transaction());
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
     }
 
     async emergencyWithdrawSol(admin: Keypair, to: PublicKey, amount: BN) {

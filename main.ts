@@ -9,25 +9,29 @@ import base58 from "bs58";
 let client = XbotClient.fromEndpoint("https://api.devnet.solana.com");
 let user = Keypair.fromSecretKey(bs58.decode(privateKey));
 let address = user.publicKey.toBase58();
-
 const prefix = "https://b.kepler.homes/api/xbot";
-
-let tokens = {
-    gkepl: new PublicKey("6jzYRF9MTWJn4JoFXPJd8RJwiYyNRWEApbru4pvTvxHC"),
-    usdc: new PublicKey("6NLPdMzsMA6119Q3Vzf1AUMKsqNMVZNvN3wbpsYLBbMx"),
-    kepl: new PublicKey("GMh5KoUfUxdFRKQdYxWzJjYhoQ9PCNWxYw1tA3XXgmhi"),
+const NETWORK_TOKENS = {
+    devnet: {
+        krp: new PublicKey("GMh5KoUfUxdFRKQdYxWzJjYhoQ9PCNWxYw1tA3XXgmhi"),
+        gkrp: new PublicKey("6jzYRF9MTWJn4JoFXPJd8RJwiYyNRWEApbru4pvTvxHC"),
+    },
+    mainnet: {
+        krp: new PublicKey("aZnnG9aRKbYzpyBSc56oFpcsokM4vHiCWddC1cELe7c"),
+        gkrp: new PublicKey("9JSVhycyit58LmwsZisTgX6GxE1r9ktfCxUhNPRCBUEX"),
+    },
 };
+let tokens = NETWORK_TOKENS[client.getNetworkName()];
 
 async function main() {
     // client = new XbotClient("https://api.mainnet-beta.solana.com");
     console.log("user", user.publicKey.toBase58());
-    // await verifyLending();
+    await verifyLending();
     // await verifyPetBuy();
     // await verifyPetUpgrade();
     // await verifyPetMint();
     // await verifyFoodBuy();
     // await verifyLandUpgrade();
-    await verifyClaimToken();
+    // await verifyClaimToken();
 }
 
 async function verifyClaimToken() {
@@ -51,7 +55,7 @@ async function verifyClaimToken() {
 }
 
 async function verifyLandUpgrade() {
-    const currency = tokens.gkepl;
+    const currency = tokens.gkrp;
     console.log("user", user.publicKey.toBase58());
     console.log("currency", currency.toBase58());
     const url = `${prefix}/land/upgradeParams?uuuu=${address}&currency=${currency.toBase58()}`;
@@ -74,14 +78,19 @@ async function verifyLandUpgrade() {
 }
 
 async function verifyLending() {
-    // const borrowAmount = new BN(10000);
-    // console.log("lendingBorrow", await client.lendingBorrow(user, tokens.gkepl, borrowAmount));
-    const repayAmount = new BN(2000);
-    console.log("lendingRepay", await client.lendingRepay(user, tokens.gkepl, repayAmount));
+    // get sol price from https://docs.chain.link/data-feeds/solana/using-data-feeds-off-chain
+
+    const solAmount = new BN(1e9);
+    //estimated token amount = i128::from(sol_amount) * price / 10i128.pow(u32::from(decimals)) / 1000 * 85 / 100;
+    console.log("lendingBorrow", await client.lendingBorrow(user, tokens.gkrp, solAmount));
+
+    const tokenAmount = new BN(111e6);
+    //estimated sol amount =  i128::from(token_amount) * 10i128.pow(u32::from(decimals)) * 1000 * 100 / price / 85
+    console.log("lendingRepay", await client.lendingRepay(user, tokens.gkrp, tokenAmount));
 }
 
 async function verifyFoodBuy() {
-    const currency = tokens.gkepl;
+    const currency = tokens.gkrp;
     const storeFoodId = new BN(4);
     const amount = new BN(2);
     console.log("user", user.publicKey.toBase58());
@@ -106,9 +115,9 @@ async function verifyFoodBuy() {
     console.log("foodBuy", ts);
 }
 
-//确保用户账号有足够gkepl币
+//确保用户账号有足够gkrp币
 async function verifyPetBuy() {
-    const currency = tokens.gkepl;
+    const currency = tokens.gkrp;
     const storePetId = new BN(2);
     console.log("currency", currency.toBase58());
     const url = `${prefix}/pet/buyParams?uuuu=${address}&currency=${currency.toBase58()}&store_pet_id=${storePetId.toNumber()}`;
@@ -140,7 +149,7 @@ async function verifyPetUpgrade() {
     let pets = await queryUserPets();
     console.log("user pets", JSON.stringify(pets));
     if (pets.length > 0) {
-        const currency = tokens.gkepl;
+        const currency = tokens.gkrp;
         const userPetId = new BN(pets.pop().id);
         console.log("currency", currency.toBase58());
         const url = `${prefix}/pet/upgradeParams?uuuu=${address}&currency=${currency.toBase58()}&user_pet_id=${userPetId.toNumber()}`;
@@ -170,7 +179,7 @@ async function verifyPetMint() {
     console.log("user pets", JSON.stringify(pets));
     pets = pets.filter((item) => item.token_id == 0);
     if (pets.length > 0) {
-        const currency = tokens.gkepl;
+        const currency = tokens.gkrp;
         const userPetId = new BN(pets.pop().id);
         console.log("user", user.publicKey.toBase58());
         console.log("currency", currency.toBase58());

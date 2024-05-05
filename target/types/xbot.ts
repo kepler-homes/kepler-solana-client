@@ -858,6 +858,16 @@ export type Xbot = {
           "isSigner": false
         },
         {
+          "name": "chainlinkFeed",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "chainlinkProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -930,6 +940,16 @@ export type Xbot = {
         },
         {
           "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "chainlinkFeed",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "chainlinkProgram",
           "isMut": false,
           "isSigner": false
         }
@@ -1127,7 +1147,7 @@ export type Xbot = {
           },
           {
             "name": "solAmount",
-            "type": "u64"
+            "type": "i64"
           },
           {
             "name": "repayAmount",
@@ -1451,6 +1471,11 @@ export type Xbot = {
       "code": 6006,
       "name": "InvalidAccess",
       "msg": "invalid access"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidSolAmount",
+      "msg": "invalid sol amount"
     }
   ]
 };
@@ -2315,6 +2340,16 @@ export const IDL: Xbot = {
           "isSigner": false
         },
         {
+          "name": "chainlinkFeed",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "chainlinkProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -2387,6 +2422,16 @@ export const IDL: Xbot = {
         },
         {
           "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "chainlinkFeed",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "chainlinkProgram",
           "isMut": false,
           "isSigner": false
         }
@@ -2584,7 +2629,7 @@ export const IDL: Xbot = {
           },
           {
             "name": "solAmount",
-            "type": "u64"
+            "type": "i64"
           },
           {
             "name": "repayAmount",
@@ -2908,6 +2953,11 @@ export const IDL: Xbot = {
       "code": 6006,
       "name": "InvalidAccess",
       "msg": "invalid access"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidSolAmount",
+      "msg": "invalid sol amount"
     }
   ]
 };
