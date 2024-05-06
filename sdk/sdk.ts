@@ -1,14 +1,16 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program, BN, EventParser, BorshCoder, AnchorProvider, Provider } from "@coral-xyz/anchor";
 import { Xbot, IDL } from "../target/types/xbot";
-import { Keypair, PublicKey, Connection, SYSVAR_RENT_PUBKEY, SystemProgram } from "@solana/web3.js";
+import { Keypair, PublicKey, Connection, SYSVAR_RENT_PUBKEY, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import * as spl from "@solana/spl-token";
-import { Metadata, PROGRAM_ID as METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
+import { Key, Metadata, PROGRAM_ID as METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import { Metaplex } from "@metaplex-foundation/js";
 import { hexToBytes, padLeft } from "web3-utils";
 
 export class XbotClient {
+    // https://docs.chain.link/data-feeds/solana/using-data-feeds-solana
+    //The program that owns the data feeds on both Devnet and Mainnet is HEvSKofvBgfaexv23kMabbYqxasxU3mQ4ibBMEmJWHny.
     CHAINLINK_PROGRAM_ID = "HEvSKofvBgfaexv23kMabbYqxasxU3mQ4ibBMEmJWHny";
     public connection: Connection;
     public program: Program<Xbot>;
@@ -78,6 +80,10 @@ export class XbotClient {
         return PublicKey.findProgramAddressSync([Buffer.from("ClaimUser"), mint.toBuffer(), user.toBuffer()], this.program.programId)[0];
     }
 
+    findAirdropUserAccountPDA(mint: PublicKey, user: PublicKey) {
+        return PublicKey.findProgramAddressSync([Buffer.from("AirdropUser"), mint.toBuffer(), user.toBuffer()], this.program.programId)[0];
+    }
+
     findLandUserAccountPDA(user: PublicKey) {
         return PublicKey.findProgramAddressSync([Buffer.from("LandUser"), user.toBuffer()], this.program.programId)[0];
     }
@@ -110,9 +116,9 @@ export class XbotClient {
         return await this.program.account.claimUserAccount.fetchNullable(pda);
     }
 
-    getSolAmountByTokenAmount(borrowPrice: BN, tokenAmount: BN) {
-        // let mut sol_amount = token_amount * ctx.accounts.lending_account.price * 100 / 85 / 1_000_000 * 1000;
-        return tokenAmount.mul(borrowPrice).mul(new BN(100)).div(new BN(85)).div(new BN(1_000_000)).mul(new BN(1000));
+    async queryAirdropUserAccount(mint: PublicKey, user: PublicKey) {
+        const pda = this.findAirdropUserAccountPDA(mint, user);
+        return await this.program.account.airdropUserAccount.fetchNullable(pda);
     }
 
     parseEvents(tx: anchor.web3.VersionedTransactionResponse) {
@@ -152,10 +158,7 @@ export class XbotClient {
             rent: SYSVAR_RENT_PUBKEY,
             systemProgram: SystemProgram.programId,
         });
-
-        // return method.signers([admin]).rpc();
-        const t = new anchor.web3.Transaction().add(await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+        return this.exec([admin], await method.transaction());
     }
 
     async mintToken(admin: Keypair, tokenName: string, to: PublicKey, amount: BN) {
@@ -170,9 +173,7 @@ export class XbotClient {
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
         });
-        // return method.signers([admin]).rpc();
-        const t = new anchor.web3.Transaction().add(await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+        return this.exec([admin], await method.transaction());
     }
 
     async getTokenBalance(mint: PublicKey, user: PublicKey) {
@@ -199,8 +200,7 @@ export class XbotClient {
             tokenMetadataProgram: METADATA_PROGRAM_ID,
         });
         const modifyComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 40_0000 });
-        const t = new anchor.web3.Transaction().add(modifyComputeUnits, await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+        return this.exec([admin], modifyComputeUnits, await method.transaction());
     }
 
     async createPetCollection(admin: Keypair) {
@@ -223,9 +223,7 @@ export class XbotClient {
             rent: SYSVAR_RENT_PUBKEY,
             systemProgram: SystemProgram.programId,
         });
-        // return await method.signers([admin]).rpc();
-        const t = new anchor.web3.Transaction().add(await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+        return this.exec([admin], await method.transaction());
     }
     async foodBuy(
         user: Keypair,
@@ -249,17 +247,8 @@ export class XbotClient {
             tokenProgram: TOKEN_PROGRAM_ID,
             ixSysvar: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
         });
-        // return method.signers([user]).rpc();
 
-        const t = new anchor.web3.Transaction().add(
-            anchor.web3.Ed25519Program.createInstructionWithPublicKey({
-                publicKey: signer.toBytes(),
-                message,
-                signature,
-            }),
-            await method.transaction()
-        );
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
+        return this.exec([user], this.getEdIx(signer, message, signature), await method.transaction());
     }
 
     async petBuy(
@@ -283,16 +272,15 @@ export class XbotClient {
             tokenProgram: TOKEN_PROGRAM_ID,
             ixSysvar: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
         });
-        // return method.signers([user]).rpc();
-        const t = new anchor.web3.Transaction().add(
-            anchor.web3.Ed25519Program.createInstructionWithPublicKey({
-                publicKey: signer.toBytes(),
-                message,
-                signature,
-            }),
-            await method.transaction()
-        );
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
+        return await this.exec([user], this.getEdIx(signer, message, signature), await method.transaction());
+    }
+
+    private getEdIx(signer: PublicKey, message: Uint8Array, signature: Uint8Array): TransactionInstruction {
+        return anchor.web3.Ed25519Program.createInstructionWithPublicKey({
+            publicKey: signer.toBytes(),
+            message,
+            signature,
+        });
     }
 
     findPetNftPDA(userPetId: BN) {
@@ -300,11 +288,6 @@ export class XbotClient {
     }
 
     async claimToken(user: Keypair, mint: PublicKey, claimId: BN, expireAt: BN, amount: BN, signer: PublicKey, message: Uint8Array, signature: Uint8Array) {
-        const edIx = anchor.web3.Ed25519Program.createInstructionWithPublicKey({
-            publicKey: signer.toBytes(),
-            message,
-            signature,
-        });
         const method = this.program.methods.claimToken(claimId, expireAt, amount, Array.from(signature)).accounts({
             user: user.publicKey,
             xbotAccount: this.findXbotAccountPDA(),
@@ -316,9 +299,41 @@ export class XbotClient {
             tokenProgram: TOKEN_PROGRAM_ID,
             ixSysvar: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
         });
-        // return method.signers([user]).rpc();
-        const t = new anchor.web3.Transaction().add(edIx, await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
+        return await this.exec([user], this.getEdIx(signer, message, signature), await method.transaction());
+    }
+
+    async airdrop(
+        user: Keypair,
+        mint: PublicKey,
+        recipient: PublicKey,
+        airdropId: BN,
+        expireAt: BN,
+        amount: BN,
+        signer: PublicKey,
+        message: Uint8Array,
+        signature: Uint8Array
+    ) {
+        const method = this.program.methods.airdrop(airdropId, expireAt, amount, Array.from(signature)).accounts({
+            user: user.publicKey,
+            xbotAccount: this.findXbotAccountPDA(),
+            tokenMint: mint,
+            vaultTokenAccount: this.findVaultTokenAccountPDA(mint),
+            recipientTokenAccount: spl.getAssociatedTokenAddressSync(mint, recipient),
+            recipient,
+            userAccount: this.findAirdropUserAccountPDA(mint, user.publicKey),
+            systemProgram: SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            ixSysvar: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+        });
+        return await this.exec([user], this.getEdIx(signer, message, signature), await method.transaction());
+    }
+
+    private async exec(signers: Keypair[], ...transactions: (Transaction | TransactionInstruction)[]) {
+        let tx = new Transaction();
+        for (let i of transactions) {
+            tx.add(i);
+        }
+        return await anchor.web3.sendAndConfirmTransaction(this.connection, tx, signers, { skipPreflight: true });
     }
 
     async petMint(user: Keypair, userPetId: BN, signer: PublicKey, message: Uint8Array, signature: Uint8Array) {
@@ -329,11 +344,7 @@ export class XbotClient {
         const tokenAccount = await spl.getAssociatedTokenAddress(nftMint, user.publicKey);
         const collectionMetadataPDA = this.findMetadataPDA(collectionPDA);
         const collectionMasterEditionPDA = this.findMasterEditionPDA(collectionPDA);
-        const edIx = anchor.web3.Ed25519Program.createInstructionWithPublicKey({
-            publicKey: signer.toBytes(),
-            message,
-            signature,
-        });
+
         const modifyComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 40_0000 });
         const method = this.program.methods.petMint(this.petCollectionMatadata.name, userPetId, Array.from(signature)).accounts({
             user: user.publicKey,
@@ -349,9 +360,7 @@ export class XbotClient {
             tokenMetadataProgram: METADATA_PROGRAM_ID,
             ixSysvar: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
         });
-
-        const tx = new anchor.web3.Transaction().add(edIx, modifyComputeUnits, await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, tx, [user], { skipPreflight: false });
+        return await this.exec([user], this.getEdIx(signer, message, signature), modifyComputeUnits, await method.transaction());
     }
 
     async lendingInitialize(admin: Keypair, price: BN) {
@@ -361,9 +370,7 @@ export class XbotClient {
             rent: SYSVAR_RENT_PUBKEY,
             systemProgram: SystemProgram.programId,
         });
-        // return await method.signers([admin]).rpc();
-        const t = new anchor.web3.Transaction().add(await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+        return await this.exec([admin], await method.transaction());
     }
 
     async initializeVault(admin: Keypair, mint: PublicKey) {
@@ -378,9 +385,7 @@ export class XbotClient {
             systemProgram: SystemProgram.programId,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         });
-        // return await method.signers([admin]).rpc();
-        const t = new anchor.web3.Transaction().add(await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: false });
+        return await this.exec([admin], await method.transaction());
     }
 
     async lendingUpdate(admin: Keypair, price: BN) {
@@ -389,9 +394,7 @@ export class XbotClient {
             lendingAccount: this.findLendingAccountPDA(),
             systemProgram: SystemProgram.programId,
         });
-        // return await method.signers([admin]).rpc();
-        const t = new anchor.web3.Transaction().add(await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+        return await this.exec([admin], await method.transaction());
     }
 
     getFeed() {
@@ -414,8 +417,7 @@ export class XbotClient {
             chainlinkProgram: this.CHAINLINK_PROGRAM_ID,
         });
         // return await method.signers([user]).rpc();
-        const t = new anchor.web3.Transaction().add(await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
+        return this.exec([user], await method.transaction());
     }
 
     async lendingRepay(user: Keypair, gkeplMint: PublicKey, tokenAmount: BN) {
@@ -433,20 +435,18 @@ export class XbotClient {
             chainlinkProgram: this.CHAINLINK_PROGRAM_ID,
         });
         // return await method.signers([user]).rpc();
-        const t = new anchor.web3.Transaction().add(await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
+        return this.exec([user], await method.transaction());
     }
 
-    async emergencyWithdrawSol(admin: Keypair, to: PublicKey, amount: BN) {
+    async emergencyWithdrawSol(user: Keypair, to: PublicKey, amount: BN) {
         const method = this.program.methods.emergencyWithdrawSol(amount).accounts({
-            admin: admin.publicKey,
+            admin: user.publicKey,
             solVaultAccount: this.findSolValultAccountPDA(),
             xbotAccount: this.findXbotAccountPDA(),
             recipientAccount: to,
             systemProgram: SystemProgram.programId,
         });
-        const t = new anchor.web3.Transaction().add(await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+        return this.exec([user], await method.transaction());
     }
 
     async emergencyWithdrawToken(admin: Keypair, mint: PublicKey, to: PublicKey, amount: BN) {
@@ -461,8 +461,7 @@ export class XbotClient {
             tokenProgram: TOKEN_PROGRAM_ID,
         });
         // return method.signers([user]).rpc();
-        const t = new anchor.web3.Transaction().add(await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+        return this.exec([admin], await method.transaction());
     }
 
     async initializeXbot(admin: Keypair, signer: PublicKey) {
@@ -474,8 +473,7 @@ export class XbotClient {
         });
         // return await method.signers([admin]).rpc();
 
-        const t = new anchor.web3.Transaction().add(await method.transaction());
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [admin], { skipPreflight: true });
+        return this.exec([admin], await method.transaction());
     }
 
     async landUpgrade(
@@ -501,16 +499,7 @@ export class XbotClient {
             ixSysvar: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
         });
         // return method.signers([user]).rpc();
-
-        const t = new anchor.web3.Transaction().add(
-            anchor.web3.Ed25519Program.createInstructionWithPublicKey({
-                publicKey: signer.toBytes(),
-                message,
-                signature,
-            }),
-            await method.transaction()
-        );
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
+        return this.exec([user], this.getEdIx(signer, message, signature), await method.transaction());
     }
 
     async petUpgrade(
@@ -535,15 +524,6 @@ export class XbotClient {
             tokenProgram: TOKEN_PROGRAM_ID,
             ixSysvar: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
         });
-        // return method.signers([user]).rpc();
-        const t = new anchor.web3.Transaction().add(
-            anchor.web3.Ed25519Program.createInstructionWithPublicKey({
-                publicKey: signer.toBytes(),
-                message,
-                signature,
-            }),
-            await method.transaction()
-        );
-        return await anchor.web3.sendAndConfirmTransaction(this.connection, t, [user], { skipPreflight: true });
+        return this.exec([user], this.getEdIx(signer, message, signature), await method.transaction());
     }
 }

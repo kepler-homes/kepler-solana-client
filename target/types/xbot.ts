@@ -8,6 +8,11 @@ export type Xbot = {
       "value": "\"ClaimUser\""
     },
     {
+      "name": "AIRDROP_USER_SEED",
+      "type": "string",
+      "value": "\"AirdropUser\""
+    },
+    {
       "name": "XBOT_SEED",
       "type": "string",
       "value": "\"XBot\""
@@ -284,6 +289,89 @@ export type Xbot = {
       "args": [
         {
           "name": "claimId",
+          "type": "u64"
+        },
+        {
+          "name": "expireAt",
+          "type": "u64"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "airdrop",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "xbotAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recipientTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recipient",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "ixSysvar",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "airdropId",
           "type": "u64"
         },
         {
@@ -1093,6 +1181,22 @@ export type Xbot = {
   ],
   "accounts": [
     {
+      "name": "airdropUserAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "lastAirdropId",
+            "type": "u64"
+          },
+          {
+            "name": "lastAirdropTime",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "claimUserAccount",
       "type": {
         "kind": "struct",
@@ -1210,6 +1314,36 @@ export type Xbot = {
     }
   ],
   "events": [
+    {
+      "name": "AirdropEvent",
+      "fields": [
+        {
+          "name": "user",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "recipient",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "mint",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "airdropId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
     {
       "name": "ClaimTokenEvent",
       "fields": [
@@ -1481,6 +1615,16 @@ export type Xbot = {
       "code": 6008,
       "name": "InvalidSolPrice",
       "msg": "invalid sol price"
+    },
+    {
+      "code": 6009,
+      "name": "DuplicateAirdrop",
+      "msg": "duplicate airdrop."
+    },
+    {
+      "code": 6010,
+      "name": "AirdropIdExpired",
+      "msg": "airdrop id expired."
     }
   ]
 };
@@ -1495,6 +1639,11 @@ export const IDL: Xbot = {
       "value": "\"ClaimUser\""
     },
     {
+      "name": "AIRDROP_USER_SEED",
+      "type": "string",
+      "value": "\"AirdropUser\""
+    },
+    {
       "name": "XBOT_SEED",
       "type": "string",
       "value": "\"XBot\""
@@ -1771,6 +1920,89 @@ export const IDL: Xbot = {
       "args": [
         {
           "name": "claimId",
+          "type": "u64"
+        },
+        {
+          "name": "expireAt",
+          "type": "u64"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "airdrop",
+      "accounts": [
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "xbotAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recipientTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recipient",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "ixSysvar",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "airdropId",
           "type": "u64"
         },
         {
@@ -2580,6 +2812,22 @@ export const IDL: Xbot = {
   ],
   "accounts": [
     {
+      "name": "airdropUserAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "lastAirdropId",
+            "type": "u64"
+          },
+          {
+            "name": "lastAirdropTime",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "claimUserAccount",
       "type": {
         "kind": "struct",
@@ -2697,6 +2945,36 @@ export const IDL: Xbot = {
     }
   ],
   "events": [
+    {
+      "name": "AirdropEvent",
+      "fields": [
+        {
+          "name": "user",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "recipient",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "mint",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "airdropId",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
     {
       "name": "ClaimTokenEvent",
       "fields": [
@@ -2968,6 +3246,16 @@ export const IDL: Xbot = {
       "code": 6008,
       "name": "InvalidSolPrice",
       "msg": "invalid sol price"
+    },
+    {
+      "code": 6009,
+      "name": "DuplicateAirdrop",
+      "msg": "duplicate airdrop."
+    },
+    {
+      "code": 6010,
+      "name": "AirdropIdExpired",
+      "msg": "airdrop id expired."
     }
   ]
 };

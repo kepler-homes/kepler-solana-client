@@ -25,15 +25,36 @@ let tokens = NETWORK_TOKENS[client.getNetworkName()];
 async function main() {
     // client = new XbotClient("https://api.mainnet-beta.solana.com");
     console.log("user", user.publicKey.toBase58());
-    await verifyLending();
+    // await verifyLending();
     // await verifyPetBuy();
     // await verifyPetUpgrade();
     // await verifyPetMint();
     // await verifyFoodBuy();
     // await verifyLandUpgrade();
     // await verifyClaimToken();
+    await verifyAirdrop();
 }
 
+async function verifyAirdrop() {
+    console.log("user", user.publicKey.toBase58());
+    const url = `${prefix}/airdrop/airdropParams?address=${user.publicKey.toBase58()}&code=12345678`;
+    console.log("url", url);
+    let res = await axios.get(url);
+    console.log(res.data);
+    let { airdrop_id, amount, expire_at, message, recipient, signature, signer, token_mint } = res.data.data;
+    const ts = await client.airdrop(
+        user,
+        new PublicKey(token_mint),
+        new PublicKey(recipient),
+        new BN(airdrop_id),
+        new BN(expire_at),
+        new BN(amount),
+        new PublicKey(signer),
+        base58.decode(message),
+        base58.decode(signature)
+    );
+    console.log("airdrop", ts);
+}
 async function verifyClaimToken() {
     console.log("user", user.publicKey.toBase58());
     const url = `${prefix}/token/claimGKeplParams?uuuu=${address}`;
