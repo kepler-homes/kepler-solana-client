@@ -24,7 +24,7 @@ export class XbotClient {
         uri: "https://xbot.bi/api/xbot/metadata/collection",
     };
 
-    public static programId: string = "BbMscgEMLHayJmYqZTFpLKUqJTcSaBrVvp41T3VzPzDd";
+    public static programId: string = "AL5nyFaZSf3wTDzNY22Ne4mdyPg3tq48ig5VBHvLTyS8";
 
     public static fromEndpoint(endpoint: string) {
         const provider = new AnchorProvider(new Connection(endpoint), null, AnchorProvider.defaultOptions());
